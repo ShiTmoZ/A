@@ -7,8 +7,8 @@ namespace AetherClient.Network
     public sealed class WinInetProxyManager
     {
         private const string InternetSettingsKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Internet Settings";
-        private const string AetherProxyAddress = "http=127.0.0.1:1820;https=127.0.0.1:1820;socks=127.0.0.1:1819";
-        private const string DefaultProxyOverride = "localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*;<local>";
+        private const string AetherProxyAddress = "127.0.0.1:1820";
+        private const string DefaultProxyOverride = "localhost;127.*;192.168.*;<local>";
 
         private readonly Action<string> _logger;
 
@@ -29,7 +29,7 @@ namespace AetherClient.Network
 
             RefreshWinInet();
             NativeMethods.DnsFlushResolverCache();
-            _logger("[NET-PROXY] WinINET System Proxy enabled (HTTP: 127.0.0.1:1820, SOCKS5: 127.0.0.1:1819).");
+            _logger("[NET-PROXY] WinINET System Proxy enabled (HTTP/HTTPS: 127.0.0.1:1820).");
         }
 
                 public void DisableProxy()

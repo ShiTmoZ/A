@@ -102,10 +102,18 @@ namespace AetherClient.Network
             int tunIfIndex = await WaitForTunInterfaceIndexAsync(cancellationToken).ConfigureAwait(false);
             _logger($"[NET-TUN] Virtual interface '{AdapterName}' active (IfIndex: {tunIfIndex}). Configuring IPv4 & Routes...");
 
-            // 4. Configure static IP, Netmask, and DNS on Aether-Tun
-            await RunCommandAsync("netsh", $"interface ip set address name=\"{AdapterName}\" source=static addr={TunAddress} mask={TunNetmask} gateway=none", cancellationToken).ConfigureAwait(false);
+            // 4. Configure static IP, Netmask, Gateway, and DNS on wintun adapter
+            await RunCommandAsync("netsh", $"interface ip set address name=\"{AdapterName}\" source=static addr={TunAddress} mask={TunNetmask} gateway={TunGateway} gwmetric=1", cancellationToken).ConfigureAwait(false);
             await RunCommandAsync("netsh", $"interface ipv4 set interface \"{AdapterName}\" metric=1 mtu=1400", cancellationToken).ConfigureAwait(false);
             await RunCommandAsync("netsh", $"interface ip set dns name=\"{AdapterName}\" static {PrimaryDns} validate=no", cancellationToken).ConfigureAwait(false);
+            await RunCommandAsync("netsh", $"interface ip add dns name=\"{AdapterName}\" 1.0.0.1 index=2 validate=no", cancellationToken).ConfigureAwait(false);
+
+            // 4.1 Redirect physical Wi-Fi DNS to 1.1.1.1 so Windows never queries local Mokhaberat router
+            if (!string.IsNullOrWhiteSpace(_physicalAdapterName))
+            {
+                await RunCommandAsync("netsh", $"interface ip set dns name=\"{_physicalAdapterName}\" static {PrimaryDns} validate=no", cancellationToken).ConfigureAwait(false);
+                _logger($"[NET-TUN] Secured physical adapter '{_physicalAdapterName}' DNS to {PrimaryDns} (anti-poisoning).");
+            }
 
             // 5. Pin MASQUE subnets & Exit IP to the physical gateway to prevent routing loops
             if (!string.IsNullOrWhiteSpace(_physicalGatewayIp) && _physicalIfIndex > 0)
@@ -180,7 +188,13 @@ namespace AetherClient.Network
                     }
                 }
 
-                _logger("[NET-TUN] System routing table restored.");
+                if (!string.IsNullOrWhiteSpace(_physicalAdapterName))
+                {
+                    RunSilentCommand("netsh", $"interface ip set dns name=\"{_physicalAdapterName}\" dhcp");
+                    _logger($"[NET-TUN] Restored physical adapter '{_physicalAdapterName}' DNS to DHCP.");
+                }
+
+                _logger("[NET-TUN] System routing table and DNS restored.");
             }
 
             if (_tunProcess is not null)
