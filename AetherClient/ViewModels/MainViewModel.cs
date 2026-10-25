@@ -67,7 +67,6 @@ namespace AetherClient.ViewModels
         [NotifyPropertyChangedFor(nameof(IsConnected))]
         [NotifyPropertyChangedFor(nameof(StatusBadgeText))]
         [NotifyPropertyChangedFor(nameof(PrimaryActionButtonText))]
-        [NotifyPropertyChangedFor(nameof(ConnectionStateSummary))]
         private TunnelConnectionState _currentState = TunnelConnectionState.Idle;
 
         [ObservableProperty]
@@ -86,6 +85,11 @@ namespace AetherClient.ViewModels
 
         [ObservableProperty]
         private bool _isEuropeanTunnel;
+
+        private bool _isUpdatingExitLocation;
+
+        [ObservableProperty]
+        private string _connectionStateSummary = "Standby • Ready to engage Cloudflare MASQUE tunnel";
 
         [ObservableProperty]
         private string _gatewayPeer = "162.159.198.86:443";
@@ -141,14 +145,6 @@ namespace AetherClient.ViewModels
             _ => "ENGAGE MASQUE LINK"
         };
 
-        public string ConnectionStateSummary => CurrentState switch
-        {
-            TunnelConnectionState.Idle => "Standby • Ready to engage Cloudflare MASQUE tunnel",
-            TunnelConnectionState.Hunting => "Probing Cloudflare Anycast edge mesh via parallel HTTP/2 CONNECT-IP...",
-            TunnelConnectionState.Connected => $"Protected via {GatewayPeer} ({RouteDatacenter}) • DNS Locked 1.1.1.1",
-            _ => "Standby"
-        };
-
         private TunnelMode SelectedMode => IsTunModeSelected ? TunnelMode.TrueTun : TunnelMode.SystemProxy;
 
         public MainViewModel()
@@ -194,45 +190,68 @@ namespace AetherClient.ViewModels
             return brush;
         }
 
+        partial void OnCurrentStateChanged(TunnelConnectionState value)
+        {
+            ConnectionStateSummary = value switch
+            {
+                TunnelConnectionState.Idle => "Standby • Ready to engage Cloudflare MASQUE tunnel",
+                TunnelConnectionState.Hunting => "Probing Cloudflare Anycast edge mesh via parallel HTTP/2 CONNECT-IP...",
+                TunnelConnectionState.Connected => $"Protected via {GatewayPeer} ({RouteDatacenter}) • DNS Locked 1.1.1.1",
+                _ => "Standby"
+            };
+        }
+
         partial void OnIsAutoAnycastChanged(bool value)
         {
-            if (value)
+            if (!value || _isUpdatingExitLocation) return;
+            _isUpdatingExitLocation = true;
+            try
             {
-                _isBypassIran = false;
-                _isEuropeanTunnel = false;
-                OnPropertyChanged(nameof(IsBypassIran));
-                OnPropertyChanged(nameof(IsEuropeanTunnel));
+                IsBypassIran = false;
+                IsEuropeanTunnel = false;
                 SelectedExitLocation = ExitLocationMode.AutoAnycast;
                 UpdateActiveCommandPreview();
                 AppendLog("[EXIT]", "Location Mode set to [Auto Anycast]: Lowest latency edge routing.", CyanTagBrush);
+            }
+            finally
+            {
+                _isUpdatingExitLocation = false;
             }
         }
 
         partial void OnIsBypassIranChanged(bool value)
         {
-            if (value)
+            if (!value || _isUpdatingExitLocation) return;
+            _isUpdatingExitLocation = true;
+            try
             {
-                _isAutoAnycast = false;
-                _isEuropeanTunnel = false;
-                OnPropertyChanged(nameof(IsAutoAnycast));
-                OnPropertyChanged(nameof(IsEuropeanTunnel));
+                IsAutoAnycast = false;
+                IsEuropeanTunnel = false;
                 SelectedExitLocation = ExitLocationMode.BypassIran;
                 UpdateActiveCommandPreview();
                 AppendLog("[EXIT]", "Location Mode set to [Bypass Iran]: Refuses Iranian exit IPs (--exit-loc !IR).", GoldTagBrush);
+            }
+            finally
+            {
+                _isUpdatingExitLocation = false;
             }
         }
 
         partial void OnIsEuropeanTunnelChanged(bool value)
         {
-            if (value)
+            if (!value || _isUpdatingExitLocation) return;
+            _isUpdatingExitLocation = true;
+            try
             {
-                _isAutoAnycast = false;
-                _isBypassIran = false;
-                OnPropertyChanged(nameof(IsAutoAnycast));
-                OnPropertyChanged(nameof(IsBypassIran));
+                IsAutoAnycast = false;
+                IsBypassIran = false;
                 SelectedExitLocation = ExitLocationMode.EuropeanTunnel;
                 UpdateActiveCommandPreview();
                 AppendLog("[EXIT]", "Location Mode set to [Europe Direct]: MASQUE-in-MASQUE (--mim) to Europe.", PurpleTagBrush);
+            }
+            finally
+            {
+                _isUpdatingExitLocation = false;
             }
         }
 
