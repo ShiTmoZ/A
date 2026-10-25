@@ -3,6 +3,10 @@ name: Build & Release Windows Client
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      - 'assets/**'
+      - 'docs/**'
     tags: [ "v*" ]
   workflow_dispatch:
 

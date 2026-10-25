@@ -20,6 +20,30 @@
 
 ---
 
+### 🛡️ Why MASQUE Works Against Severe DPI & Censorship
+
+National firewalls and ISP Deep Packet Inspection (DPI) engines employ three primary mechanisms to disrupt circumvention tools. MASQUE (RFC 9298) systematically neutralizes all three layers:
+
+#### 1. Overcoming the UDP & WireGuard Deadlock
+- **The Problem**: Standard Cloudflare WARP (the official 1.1.1.1 client) operates over UDP-based WireGuard. Restrictive ISPs enforce aggressive UDP rate-limiting, random packet dropping, and port blacklisting, rendering raw WireGuard unstable or completely blocked.
+- **The MASQUE Solution**: MASQUE encapsulates the entire tunnel data plane into a reliable, connection-oriented **HTTP/2 (TCP) transport on standard TLS port 443**. ISPs cannot throttle or drop TCP port 443 without simultaneously breaking thousands of domestic financial, governmental, and commercial services hosted behind Cloudflare's Anycast CDN.
+
+#### 2. Stealth via Standard Web Requests (`CONNECT-IP`)
+- Rather than exposing identifiable VPN handshakes or protocol headers, the client establishes an authentic TLS session directly to Cloudflare's Anycast edge and issues a standardized proxy request:
+  ```http
+  CONNECT /.well-known/masque/ip/172.16.0.2/ HTTP/2
+  Host: cloudflareaccess.com
+  ```
+- Cloudflare’s edge responds with `HTTP/2 200 OK`. From that moment onward, all bidirectional IP frames are multiplexed inside what appears to the DPI as an ordinary, encrypted HTTPS browsing stream. No identifiable VPN signatures or heuristic fingerprints are visible on the wire.
+
+#### 3. Immune to DNS Poisoning (Zero-Leak Architecture)
+- Restrictive ISPs routinely hijack and poison unencrypted UDP port 53 DNS queries, returning blackhole or filtering sinkhole IPs (e.g., `10.10.34.34`).
+- In this client:
+  - **In System Proxy Mode**: Browsers issue standard `CONNECT <domain>:443` requests directly to `127.0.0.1:1820`. Domain names are resolved remotely by Cloudflare's recursive resolvers inside the Frankfurt egress node—local DNS is never queried.
+  - **In True TUN Mode**: The client automatically rebinds physical adapter DNS to `1.1.1.1` and tunnels all port 53 datagrams through the encrypted Wintun interface, completely isolating queries from ISP surveillance and spoofing.
+
+---
+
 ### 🚀 Quick Start
 
 1. Download the latest release from [Releases](https://github.com/ShiTmoZ/A/releases).
