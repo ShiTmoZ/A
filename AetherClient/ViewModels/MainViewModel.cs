@@ -80,6 +80,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _lastHandshakeDuration = "-- ms";
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ExitLocationBadge))]
+    private bool _isForeignExitMode = false;
+
+    public string ExitLocationBadge => IsForeignExitMode ? "EUROPEAN EXIT (MIM)" : "DIRECT MASQUE";
+
     public bool IsIdle => ConnectionState == CyberConnectionState.Idle;
     public bool IsHunting => ConnectionState == CyberConnectionState.Hunting;
     public bool IsConnected => ConnectionState == CyberConnectionState.Connected;
@@ -225,6 +231,21 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void ToggleForeignExit()
+    {
+        if (ConnectionState != CyberConnectionState.Idle)
+        {
+            AppendLog("[WARN] Disconnect active link before toggling European Exit mode.");
+            return;
+        }
+
+        IsForeignExitMode = !IsForeignExitMode;
+        AppendLog(IsForeignExitMode
+            ? "[CONFIG] European Foreign Exit enabled (MASQUE-in-MASQUE). Tunnel will route via inner European hop to show outside Iran."
+            : "[CONFIG] Direct MASQUE enabled. Maximum single-hop throughput and lowest latency.");
+    }
+
+    [RelayCommand]
     private async Task PingAllNodesAsync()
     {
         if (IsPingingRadar)
@@ -330,6 +351,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         bool started = await _processService.StartAsync(
             forceFreshScan: forceFreshScan,
             customPeer: peerToPass,
+            useForeignExit: IsForeignExitMode,
             cancellationToken: _connectionCts.Token).ConfigureAwait(false);
 
         if (!started)
@@ -421,11 +443,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void OnTelemetryUpdated(ExitNodeTelemetry telemetry)
     {
-        if (IsTunMode && !string.IsNullOrWhiteSpace(telemetry.IpAddress))
-        {
-            _tunManager.AddBypassHostRoute(telemetry.IpAddress);
-        }
-
         AppendLog($"[TELEMETRY] Exit Node: {telemetry.IpAddress} ({telemetry.Route}) | RTT: {telemetry.Rtt}");
     }
 
@@ -436,6 +453,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             ActiveEndpointDisplay = endpoint;
             OnPropertyChanged(nameof(PrimaryActionSubtext));
         });
+
+        if (IsTunMode && !string.IsNullOrWhiteSpace(endpoint))
+        {
+            _tunManager.AddBypassHostRoute(endpoint);
+        }
     }
 
     private void OnProcessTunnelStateChanged(bool isRunning)

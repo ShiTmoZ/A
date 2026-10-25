@@ -462,85 +462,146 @@
                     </Grid>
                 </Border>
 
-                <!-- ==================== ROW 2: SEGMENTED MODE SELECTION PILLS ==================== -->
-                <Border Grid.Row="2"
-                        Margin="0,0,0,12"
-                        Background="{StaticResource GlassSurfaceBrush}"
-                        BorderBrush="{StaticResource SlateBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="4">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                <!-- ==================== ROW 2: SEGMENTED MODE SELECTION PILLS & EXIT HOP TOGGLE ==================== -->
+                <StackPanel Grid.Row="2" Margin="0,0,0,10">
+                    <Border Background="{StaticResource GlassSurfaceBrush}"
+                            BorderBrush="{StaticResource SlateBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="4">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                        <!-- [🛡️ True TUN] Pill -->
-                        <Button Grid.Column="0"
-                                Command="{Binding SetRoutingModeCommand}"
-                                CommandParameter="TUN"
+                            <!-- [🛡️ True TUN] Pill -->
+                            <Button Grid.Column="0"
+                                    Command="{Binding SetRoutingModeCommand}"
+                                    CommandParameter="TUN"
+                                    Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="TunPillBorder"
+                                                CornerRadius="7"
+                                                Padding="10,7"
+                                                Background="Transparent"
+                                                BorderThickness="1"
+                                                BorderBrush="Transparent">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="🛡️ True TUN (Wintun)"
+                                                           x:Name="TunPillText"
+                                                           FontSize="11.5"
+                                                           FontWeight="Bold"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsTunMode}" Value="True">
+                                                <Setter TargetName="TunPillBorder" Property="Background" Value="#26F43F5E" />
+                                                <Setter TargetName="TunPillBorder" Property="BorderBrush" Value="#80F43F5E" />
+                                                <Setter TargetName="TunPillText" Property="Foreground" Value="#FFFFFF" />
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- [🌐 System Proxy] Pill -->
+                            <Button Grid.Column="1"
+                                    Command="{Binding SetRoutingModeCommand}"
+                                    CommandParameter="PROXY"
+                                    Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="ProxyPillBorder"
+                                                CornerRadius="7"
+                                                Padding="10,7"
+                                                Background="Transparent"
+                                                BorderThickness="1"
+                                                BorderBrush="Transparent">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="🌐 System Proxy (1820)"
+                                                           x:Name="ProxyPillText"
+                                                           FontSize="11.5"
+                                                           FontWeight="Bold"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsSystemProxyMode}" Value="True">
+                                                <Setter TargetName="ProxyPillBorder" Property="Background" Value="#260284C7" />
+                                                <Setter TargetName="ProxyPillBorder" Property="BorderBrush" Value="#8038BDF8" />
+                                                <Setter TargetName="ProxyPillText" Property="Foreground" Value="#FFFFFF" />
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- European Non-IR Exit (MIM) Toggle Pill -->
+                    <Border Margin="0,6,0,0"
+                            Background="{StaticResource GlassSurfaceBrush}"
+                            BorderBrush="{StaticResource SlateBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="3">
+                        <Button Command="{Binding ToggleForeignExitCommand}"
                                 Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="TunPillBorder"
-                                            CornerRadius="7"
-                                            Padding="10,8"
+                                    <Border x:Name="MimBorder"
+                                            CornerRadius="6"
+                                            Padding="8,5"
                                             Background="Transparent"
                                             BorderThickness="1"
                                             BorderBrush="Transparent">
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <TextBlock Text="🛡️ True TUN (Wintun)"
-                                                       x:Name="TunPillText"
-                                                       FontSize="12"
-                                                       FontWeight="Bold"
-                                                       Foreground="{StaticResource TextSecondaryBrush}" />
-                                        </StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="🌍" FontSize="11" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="Foreign Non-IR Exit (MIM)"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           VerticalAlignment="Center" />
+                                                <TextBlock Text=" • European Hop"
+                                                           FontSize="9.5"
+                                                           Foreground="{StaticResource TextMutedBrush}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <Border Grid.Column="1"
+                                                    CornerRadius="4"
+                                                    Padding="6,2"
+                                                    VerticalAlignment="Center"
+                                                    Background="{StaticResource SurfaceElevatedBrush}"
+                                                    BorderBrush="{StaticResource SlateBorderBrush}"
+                                                    BorderThickness="1">
+                                                <TextBlock Text="{Binding ExitLocationBadge}"
+                                                           FontSize="9.5"
+                                                           FontWeight="Bold"
+                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           x:Name="BadgeText" />
+                                            </Border>
+                                        </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
-                                        <DataTrigger Binding="{Binding IsTunMode}" Value="True">
-                                            <Setter TargetName="TunPillBorder" Property="Background" Value="#26F43F5E" />
-                                            <Setter TargetName="TunPillBorder" Property="BorderBrush" Value="#80F43F5E" />
-                                            <Setter TargetName="TunPillText" Property="Foreground" Value="#FFFFFF" />
+                                        <DataTrigger Binding="{Binding IsForeignExitMode}" Value="True">
+                                            <Setter TargetName="MimBorder" Property="Background" Value="#1A10B981" />
+                                            <Setter TargetName="MimBorder" Property="BorderBrush" Value="#8010B981" />
+                                            <Setter TargetName="BadgeText" Property="Foreground" Value="#10B981" />
                                         </DataTrigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>
-
-                        <!-- [🌐 System Proxy] Pill -->
-                        <Button Grid.Column="1"
-                                Command="{Binding SetRoutingModeCommand}"
-                                CommandParameter="PROXY"
-                                Cursor="Hand">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="ProxyPillBorder"
-                                            CornerRadius="7"
-                                            Padding="10,8"
-                                            Background="Transparent"
-                                            BorderThickness="1"
-                                            BorderBrush="Transparent">
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <TextBlock Text="🌐 System Proxy (1820)"
-                                                       x:Name="ProxyPillText"
-                                                       FontSize="12"
-                                                       FontWeight="Bold"
-                                                       Foreground="{StaticResource TextSecondaryBrush}" />
-                                        </StackPanel>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <DataTrigger Binding="{Binding IsSystemProxyMode}" Value="True">
-                                            <Setter TargetName="ProxyPillBorder" Property="Background" Value="#260284C7" />
-                                            <Setter TargetName="ProxyPillBorder" Property="BorderBrush" Value="#8038BDF8" />
-                                            <Setter TargetName="ProxyPillText" Property="Foreground" Value="#FFFFFF" />
-                                        </DataTrigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                    </Grid>
-                </Border>
+                    </Border>
+                </StackPanel>
 
                 <!-- ==================== ROW 3: EMBEDDED CLEAN IP RADAR DRAWER ==================== -->
                 <Border Grid.Row="3"

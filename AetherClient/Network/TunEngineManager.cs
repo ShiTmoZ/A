@@ -59,7 +59,7 @@ namespace AetherClient.Network
             RunSilentCommand("route", $"delete 0.0.0.0 mask 0.0.0.0 {TunGateway}");
         }
 
-        public async Task StartTunAsync(string? knownExitIp, CancellationToken cancellationToken)
+        public async Task StartTunAsync(string? knownPeerEndpoint, CancellationToken cancellationToken)
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string tun2SocksPath = Path.Combine(baseDir, Tun2SocksExe);
@@ -123,9 +123,9 @@ namespace AetherClient.Network
                     await RunCommandAsync("route", $"add {network} mask {mask} {_physicalGatewayIp} metric 1 if {_physicalIfIndex}", cancellationToken).ConfigureAwait(false);
                 }
 
-                if (!string.IsNullOrWhiteSpace(knownExitIp))
+                if (!string.IsNullOrWhiteSpace(knownPeerEndpoint))
                 {
-                    AddBypassHostRoute(knownExitIp);
+                    AddBypassHostRoute(knownPeerEndpoint);
                 }
             }
 
@@ -157,7 +157,7 @@ namespace AetherClient.Network
                 if (_installedBypassHosts.Add(cleanIp))
                 {
                     RunSilentCommand("route", $"add {cleanIp} mask 255.255.255.255 {_physicalGatewayIp} metric 1 if {_physicalIfIndex}");
-                    _logger($"[NET-TUN] Added physical egress bypass route for exit node {cleanIp}/32.");
+                    _logger($"[NET-TUN] Added physical egress bypass route for peer gateway {cleanIp}/32.");
                 }
             }
         }

@@ -17,10 +17,10 @@ public sealed partial class AetherProcessService : IDisposable
     public const int LocalHttpProxyPort = 1820;
     public const int LocalSocksProxyPort = 1819;
 
-    [GeneratedRegex(@"masque exit:\s*([^,]+),\s*([^,]+),\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"masque(?:-in-masque)? exit:\s*([^,]+),\s*([^,]+),\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex MasqueExitRegex();
 
-    [GeneratedRegex(@"\b(?:162\.159|188\.114)\.\d{1,3}\.\d{1,3}:\d{2,5}\b", RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{2,5}\b", RegexOptions.Compiled)]
     private static partial Regex EndpointRegex();
 
     private readonly JobObjectManager _jobManager;
@@ -62,11 +62,13 @@ public sealed partial class AetherProcessService : IDisposable
 
     /// <summary>
     /// Starts the underlying MASQUE HTTP/2 core engine.
-    /// If customPeer is provided, appends --peer {customPeer} and connects directly in <400ms.
+    /// If customPeer is provided, locks the edge peer and connects directly.
+    /// If useForeignExit is enabled, launches in MASQUE-in-MASQUE (--mim) mode for Non-IR exit location.
     /// </summary>
     public async Task<bool> StartAsync(
         bool forceFreshScan = false,
         string? customPeer = null,
+        bool useForeignExit = false,
         CancellationToken cancellationToken = default)
     {
         await _lifecycleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -90,23 +92,26 @@ public sealed partial class AetherProcessService : IDisposable
             bool isCustomPeer = !string.IsNullOrWhiteSpace(customPeer) &&
                                 !customPeer.Equals("Auto", StringComparison.OrdinalIgnoreCase);
 
+            string proto = useForeignExit ? "--mim" : "--masque";
             string modeArgs;
+
             if (isCustomPeer)
             {
                 string peer = customPeer!.Trim();
-                modeArgs = $"--peer {peer} --quick-reconnect";
+                string peerFlag = useForeignExit ? "--mim-outer" : "--peer";
+                modeArgs = $"{peerFlag} {peer} --quick-reconnect";
                 ActivePeer = peer;
-                EmitLog($"[RADAR-LOCK] Engaging direct MASQUE Anycast lock -> {peer}");
+                EmitLog($"[RADAR-LOCK] Engaging direct Anycast peer lock -> {peer} (Proto: {proto})");
             }
             else
             {
                 string scanFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
                 modeArgs = $"--turbo {scanFlag}";
                 ActivePeer = "Auto (Turbo)";
-                EmitLog($"[TURBO-MESH] Engaging Cloudflare Anycast Turbo mode ({modeArgs})");
+                EmitLog($"[TURBO-MESH] Engaging Cloudflare Anycast Turbo auto-probe ({proto} {modeArgs})");
             }
 
-            string arguments = $"--masque --h2 -4 {modeArgs} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
+            string arguments = $"{proto} --h2 -4 {modeArgs} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
             EmitLog($"[EXEC] {ExecutableName} {arguments}");
 
             var psi = new ProcessStartInfo
@@ -342,7 +347,10 @@ public sealed partial class AetherProcessService : IDisposable
 
         // Check for forced or detected peer IP
         var epMatch = EndpointRegex().Match(line);
-        if (epMatch.Success && (line.Contains("forced peer") || line.Contains("using cloudflare edge") || line.Contains("MASQUE transport")))
+        if (epMatch.Success && (line.Contains("forced peer") ||
+                                line.Contains("selected MASQUE gateway") ||
+                                line.Contains("using cloudflare edge") ||
+                                line.Contains("MASQUE transport")))
         {
             ActivePeer = epMatch.Value;
             ActiveEndpointDetected?.Invoke(epMatch.Value);

@@ -55,6 +55,10 @@ jobs:
               Copy-Item "AetherClient\aether-masque.toml" ".\publish\aether-masque.toml" -Force
           }
 
+          if (Test-Path "AetherClient\aether-masque-secondary.toml") {
+              Copy-Item "AetherClient\aether-masque-secondary.toml" ".\publish\aether-masque-secondary.toml" -Force
+          }
+
           if (Test-Path "AetherClient\clean_ips.txt") {
               Copy-Item "AetherClient\clean_ips.txt" ".\publish\clean_ips.txt" -Force
           }

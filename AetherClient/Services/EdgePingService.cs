@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,8 +16,8 @@ namespace AetherClient.Services;
 
 public sealed class EdgePingService
 {
-    private const int DefaultTimeoutMs = 1200;
-    private const int MaxConcurrentPings = 32;
+    private const int DefaultTimeoutMs = 1800;
+    private const int MaxConcurrentPings = 16;
 
     /// <summary>
     /// Builds the initial Clean IP pool from embedded Cloudflare Anycast edges
@@ -121,9 +123,11 @@ public sealed class EdgePingService
     }
 
     /// <summary>
-    /// Measures raw TCP SYN-ACK handshake latency to an Anycast endpoint with a strict 1200ms timeout.
+    /// Performs an authentic L7 TLS 1.3 handshake against the Anycast edge with SNI 'www.cloudflare.com'.
+    /// Measures true handshake latency through DPI. If Iran DPI drops or resets the ClientHello,
+    /// or if the node fails to negotiate, returns -1.
     /// </summary>
-    public async Task<int> MeasureTcpLatencyAsync(
+    public async Task<int> MeasureTlsConnectabilityAsync(
         string endpoint,
         int timeoutMs = DefaultTimeoutMs,
         CancellationToken cancellationToken = default)
@@ -134,7 +138,7 @@ public sealed class EdgePingService
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromMilliseconds(timeoutMs));
 
-        using var socket = new Socket(ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+        using var tcpClient = new TcpClient
         {
             NoDelay = true
         };
@@ -142,64 +146,75 @@ public sealed class EdgePingService
         try
         {
             long startTick = Stopwatch.GetTimestamp();
-            await socket.ConnectAsync(ipEndPoint, cts.Token).ConfigureAwait(false);
-            TimeSpan elapsed = Stopwatch.GetElapsedTime(startTick);
 
-            try
+            // 1. TCP 3-Way Handshake
+            await tcpClient.ConnectAsync(ipEndPoint.Address, ipEndPoint.Port, cts.Token).ConfigureAwait(false);
+
+            // 2. L7 TLS 1.3 Handshake (Authentic ClientHello probe against Iran DPI)
+            using var sslStream = new SslStream(
+                tcpClient.GetStream(),
+                leaveInnerStreamOpen: false,
+                userCertificateValidationCallback: (_, _, _, _) => true);
+
+            var sslOptions = new SslClientAuthenticationOptions
             {
-                socket.Shutdown(SocketShutdown.Both);
-            }
-            catch
-            {
-                // Ignore socket shutdown exceptions after handshake
-            }
+                TargetHost = "www.cloudflare.com",
+                ApplicationProtocols = new List<SslApplicationProtocol>
+                {
+                    SslApplicationProtocol.Http2
+                },
+                EnabledSslProtocols = SslProtocols.Tls13 | SslProtocols.Tls12
+            };
+
+            await sslStream.AuthenticateAsClientAsync(sslOptions, cts.Token).ConfigureAwait(false);
+            TimeSpan elapsed = Stopwatch.GetElapsedTime(startTick);
 
             return Math.Max(1, (int)Math.Round(elapsed.TotalMilliseconds));
         }
         catch
         {
+            // DPI drop, RST, or handshake timeout
             return -1;
         }
     }
 
     /// <summary>
-    /// Pings all static and custom nodes in parallel via Task.WhenAll and returns the sorted list
-    /// (Auto node first, then lowest latency reachable nodes ascending, then unreachable nodes).
+    /// Probes all nodes in the pool using real L7 TLS 1.3 connectability tests.
+    /// Only nodes passing the TLS handshake through DPI are marked optimal.
     /// </summary>
-    public async Task<List<EdgeNodeModel>> PingAllNodesAsync(
+    public async Task PingAllNodesAsync(
         IEnumerable<EdgeNodeModel> nodes,
+        Action<EdgeNodeModel>? onNodeTested = null,
         CancellationToken cancellationToken = default)
     {
-        List<EdgeNodeModel> snapshot = nodes.ToList();
-        EdgeNodeModel? autoNode = snapshot.FirstOrDefault(n => n.IsAuto);
-        List<EdgeNodeModel> targetNodes = snapshot.Where(n => !n.IsAuto).ToList();
+        var nodeArray = nodes.Where(n => !n.IsAuto).ToArray();
+        var autoNode = nodes.FirstOrDefault(n => n.IsAuto);
 
-        await RunOnUiThreadAsync(() =>
+        foreach (var node in nodeArray)
         {
-            if (autoNode is not null)
-                autoNode.IsProbing = true;
+            node.IsProbing = true;
+        }
 
-            foreach (EdgeNodeModel node in targetNodes)
-            {
-                node.IsProbing = true;
-            }
-        });
-
-        using var throttler = new SemaphoreSlim(MaxConcurrentPings);
-
-        IEnumerable<Task> probeTasks = targetNodes.Select(async node =>
+        using var throttler = new SemaphoreSlim(MaxConcurrentPings, MaxConcurrentPings);
+        var tasks = nodeArray.Select(async node =>
         {
             await throttler.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                int rtt = await MeasureTcpLatencyAsync(node.Endpoint, DefaultTimeoutMs, cancellationToken)
-                    .ConfigureAwait(false);
+                if (cancellationToken.IsCancellationRequested)
+                    return;
 
-                await RunOnUiThreadAsync(() =>
+                int latency = await MeasureTlsConnectabilityAsync(
+                    node.Endpoint,
+                    DefaultTimeoutMs,
+                    cancellationToken).ConfigureAwait(false);
+
+                Application.Current?.Dispatcher?.Invoke(() =>
                 {
-                    node.LatencyMs = rtt;
+                    node.LatencyMs = latency;
                     node.HasBeenTested = true;
                     node.IsProbing = false;
+                    onNodeTested?.Invoke(node);
                 });
             }
             finally
@@ -208,52 +223,33 @@ public sealed class EdgePingService
             }
         });
 
-        await Task.WhenAll(probeTasks).ConfigureAwait(false);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
 
-        List<EdgeNodeModel> sortedReachable = targetNodes
-            .Where(n => n.LatencyMs > 0)
-            .OrderBy(n => n.LatencyMs)
-            .ThenBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        List<EdgeNodeModel> unreachable = targetNodes
-            .Where(n => n.LatencyMs <= 0)
-            .OrderBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        await RunOnUiThreadAsync(() =>
+        // Update Auto node to best measured latency
+        if (autoNode != null)
         {
-            if (autoNode is not null)
+            var bestTested = nodeArray.Where(n => n.HasBeenTested && n.LatencyMs > 0).ToList();
+            Application.Current?.Dispatcher?.Invoke(() =>
             {
-                autoNode.LatencyMs = sortedReachable.Count > 0 ? sortedReachable[0].LatencyMs : -1;
+                autoNode.LatencyMs = bestTested.Count > 0 ? bestTested.Min(n => n.LatencyMs) : -1;
                 autoNode.HasBeenTested = true;
                 autoNode.IsProbing = false;
-            }
-        });
-
-        var finalOrdered = new List<EdgeNodeModel>(snapshot.Count);
-        if (autoNode is not null)
-            finalOrdered.Add(autoNode);
-
-        finalOrdered.AddRange(sortedReachable);
-        finalOrdered.AddRange(unreachable);
-
-        return finalOrdered;
+                onNodeTested?.Invoke(autoNode);
+            });
+        }
     }
 
-    private static Task RunOnUiThreadAsync(Action action)
+    /// <summary>
+    /// Finds the best connected node with the lowest positive TLS latency.
+    /// Returns the Auto node if no direct candidate is verified.
+    /// </summary>
+    public EdgeNodeModel? GetOptimalNode(IEnumerable<EdgeNodeModel> nodes)
     {
-        if (Application.Current?.Dispatcher is { } dispatcher)
-        {
-            if (dispatcher.CheckAccess())
-            {
-                action();
-                return Task.CompletedTask;
-            }
-            return dispatcher.InvokeAsync(action).Task;
-        }
+        var testedCandidates = nodes
+            .Where(n => !n.IsAuto && n.HasBeenTested && n.LatencyMs > 0)
+            .OrderBy(n => n.LatencyMs)
+            .ToList();
 
-        action();
-        return Task.CompletedTask;
+        return testedCandidates.FirstOrDefault() ?? nodes.FirstOrDefault(n => n.IsAuto);
     }
 }
