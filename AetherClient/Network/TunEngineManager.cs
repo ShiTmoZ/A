@@ -15,7 +15,7 @@ namespace AetherClient.Network
 {
     public sealed class TunEngineManager : IDisposable
     {
-        public const string AdapterName = "Aether-Tun";
+        public const string AdapterName = "wintun";
         private const string Tun2SocksExe = "tun2socks.exe";
         private const string WintunDll = "wintun.dll";
         private const string TunAddress = "10.0.85.2";
@@ -76,7 +76,7 @@ namespace AetherClient.Network
             _logger($"[NET-TUN] Bound physical egress to '{_physicalAdapterName}' (Gateway: {_physicalGatewayIp}, IfIndex: {_physicalIfIndex})");
 
             // 2. Launch tun2socks with wintun device 'Aether-Tun'
-            string args = $"-device tun://{AdapterName} -proxy socks5://127.0.0.1:1819 -interface \"{_physicalAdapterName}\" -loglevel warn";
+            string args = $"--device wintun --proxy socks5://127.0.0.1:1819 --interface \"{_physicalAdapterName}\" --loglevel warn";
             var psi = new ProcessStartInfo
             {
                 FileName = tun2SocksPath,

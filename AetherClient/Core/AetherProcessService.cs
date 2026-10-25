@@ -75,7 +75,7 @@ namespace AetherClient.Core
                 _cts = new CancellationTokenSource();
 
                 string scanFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
-                string arguments = $"--masque --h2 -4 --turbo {scanFlag}";
+                string arguments = $"--masque --h2 -4 --turbo {scanFlag} --http-proxy 127.0.0.1:1820";
 
                 var psi = new ProcessStartInfo
                 {

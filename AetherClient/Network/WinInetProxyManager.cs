@@ -7,7 +7,7 @@ namespace AetherClient.Network
     public sealed class WinInetProxyManager
     {
         private const string InternetSettingsKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Internet Settings";
-        private const string AetherProxyAddress = "socks=127.0.0.1:1819";
+        private const string AetherProxyAddress = "http=127.0.0.1:1820;https=127.0.0.1:1820;socks=127.0.0.1:1819";
         private const string DefaultProxyOverride = "localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*;<local>";
 
         private readonly Action<string> _logger;
@@ -29,10 +29,10 @@ namespace AetherClient.Network
 
             RefreshWinInet();
             NativeMethods.DnsFlushResolverCache();
-            _logger("[NET-PROXY] WinINET System Proxy enabled (socks=127.0.0.1:1819).");
+            _logger("[NET-PROXY] WinINET System Proxy enabled (HTTP: 127.0.0.1:1820, SOCKS5: 127.0.0.1:1819).");
         }
 
-        public void DisableProxy()
+                public void DisableProxy()
         {
             try
             {
@@ -43,13 +43,10 @@ namespace AetherClient.Network
                 string? currentServer = key.GetValue("ProxyServer") as string;
                 int? currentEnable = key.GetValue("ProxyEnable") as int?;
 
-                if (currentEnable == 1 || (currentServer?.Contains("127.0.0.1:1819", StringComparison.OrdinalIgnoreCase) ?? false))
+                if (currentEnable == 1 || (currentServer?.Contains("1820", StringComparison.OrdinalIgnoreCase) ?? false) || (currentServer?.Contains("1819", StringComparison.OrdinalIgnoreCase) ?? false))
                 {
                     key.SetValue("ProxyEnable", 0, RegistryValueKind.DWord);
-                    if (currentServer?.Contains("127.0.0.1:1819", StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        key.SetValue("ProxyServer", string.Empty, RegistryValueKind.String);
-                    }
+                    key.SetValue("ProxyServer", string.Empty, RegistryValueKind.String);
 
                     RefreshWinInet();
                     NativeMethods.DnsFlushResolverCache();
@@ -70,7 +67,7 @@ namespace AetherClient.Network
                 if (key is null) return;
 
                 string? server = key.GetValue("ProxyServer") as string;
-                if (server is not null && server.Contains("127.0.0.1:1819", StringComparison.OrdinalIgnoreCase))
+                if (server is not null && (server.Contains("1820", StringComparison.OrdinalIgnoreCase) || server.Contains("1819", StringComparison.OrdinalIgnoreCase)))
                 {
                     key.SetValue("ProxyEnable", 0, RegistryValueKind.DWord);
                     key.SetValue("ProxyServer", string.Empty, RegistryValueKind.String);
