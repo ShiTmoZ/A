@@ -241,7 +241,31 @@
                         BorderThickness="1"
                         CornerRadius="14"
                         Padding="14">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <!-- IDLE STATE: Cyan Breathing Ring -->
+                                <DataTrigger Binding="{Binding ConnectionState}" Value="{x:Static vm:CyberConnectionState.Idle}">
+                                    <Setter Property="BorderBrush" Value="#330284C7" />
+                                </DataTrigger>
+                                <!-- HUNTING STATE: Amber Radar Pulse -->
+                                <DataTrigger Binding="{Binding ConnectionState}" Value="{x:Static vm:CyberConnectionState.Hunting}">
+                                    <Setter Property="BorderBrush" Value="#66F59E0B" />
+                                </DataTrigger>
+                                <!-- CONNECTED STATE: Emerald Shield -->
+                                <DataTrigger Binding="{Binding ConnectionState}" Value="{x:Static vm:CyberConnectionState.Connected}">
+                                    <Setter Property="BorderBrush" Value="#6610B981" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
                     <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
                         <!-- Crimson top-left cyber bracket accent -->
                         <Path Data="M 0,16 L 0,0 L 28,0"
                               Stroke="{StaticResource CrimsonAccentBrush}"
@@ -249,11 +273,6 @@
                               HorizontalAlignment="Left"
                               VerticalAlignment="Top"
                               Margin="-14,-14,0,0" />
-
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
 
                         <!-- ANIME AVATAR + DYNAMIC STATUS RINGS -->
                         <Grid Width="96" Height="96" Margin="0,0,16,0">
@@ -445,26 +464,6 @@
                             </Grid>
                         </StackPanel>
                     </Grid>
-
-                    <!-- STORYBOARDS FOR AVATAR RINGS (IDLE / HUNTING / CONNECTED) -->
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Style.Triggers>
-                                <!-- IDLE STATE: Cyan Breathing Ring -->
-                                <DataTrigger Binding="{Binding ConnectionState}" Value="{x:Static vm:CyberConnectionState.Idle}">
-                                    <Setter Property="BorderBrush" Value="#330284C7" />
-                                </DataTrigger>
-                                <!-- HUNTING STATE: Amber Radar Pulse -->
-                                <DataTrigger Binding="{Binding ConnectionState}" Value="{x:Static vm:CyberConnectionState.Hunting}">
-                                    <Setter Property="BorderBrush" Value="#66F59E0B" />
-                                </DataTrigger>
-                                <!-- CONNECTED STATE: Emerald Shield -->
-                                <DataTrigger Binding="{Binding ConnectionState}" Value="{x:Static vm:CyberConnectionState.Connected}">
-                                    <Setter Property="BorderBrush" Value="#6610B981" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
                 </Border>
 
                 <!-- ==================== ROW 2: SEGMENTED MODE SELECTION PILLS ==================== -->
