@@ -31,7 +31,7 @@ namespace AetherClient.Views
             _onMinimizedToTray = onMinimizedToTray;
 
             SafeSetWindowIcon();
-            SafeLoadAvatarImage();
+            SafeLoadHeroCharacterImage();
 
             _viewModel.PropertyChanged += ViewModel_PropertyChanged;
             if (_viewModel.Logs is INotifyCollectionChanged notifyLogs)
@@ -44,13 +44,13 @@ namespace AetherClient.Views
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            StartAmbientOrbitalAnimation();
+            StartAmbientAnimeAnimations();
             ApplyConnectionStateAnimations(_viewModel.CurrentState);
             ScrollLogsToBottom();
         }
 
         /// <summary>
-        /// Safely loads app.ico in code-behind without risking a XAML BAML parser crash if missing.
+        /// Safely loads app.ico in code-behind to eliminate XAML BAML resolution crashes.
         /// </summary>
         private void SafeSetWindowIcon()
         {
@@ -78,15 +78,14 @@ namespace AetherClient.Views
             }
             catch
             {
-                // Keep default system icon if app.ico is unavailable or invalid.
+                // Fallback to standard window icon
             }
         }
 
         /// <summary>
-        /// Safely loads assets/avatar.jpg into the circular HUD container while preserving
-        /// the stylized geometric elven silhouette fallback if the file is absent.
+        /// Safely loads assets/avatar.jpg into the Hero anime stage with full resolution and memory caching.
         /// </summary>
-        private void SafeLoadAvatarImage()
+        private void SafeLoadHeroCharacterImage()
         {
             try
             {
@@ -111,28 +110,46 @@ namespace AetherClient.Views
                         bitmap.EndInit();
                         bitmap.Freeze();
 
-                        AvatarImageBrush.ImageSource = bitmap;
-                        AvatarImageContainer.Visibility = Visibility.Visible;
+                        HeroCharacterImage.Source = bitmap;
                         return;
                     }
                 }
             }
             catch
             {
-                AvatarImageContainer.Visibility = Visibility.Collapsed;
+                // Image remains null; vector fallback remains visible
             }
         }
 
-        private void StartAmbientOrbitalAnimation()
+        /// <summary>
+        /// Rotates the anime magic rune circles in opposite directions to produce the magical energy aura.
+        /// </summary>
+        private void StartAmbientAnimeAnimations()
         {
-            var orbitalSpin = new DoubleAnimation
+            try
             {
-                From = 0,
-                To = -360,
-                Duration = TimeSpan.FromSeconds(28),
-                RepeatBehavior = RepeatBehavior.Forever
-            };
-            OrbitalRotateTransform.BeginAnimation(RotateTransform.AngleProperty, orbitalSpin);
+                var outerRuneSpin = new DoubleAnimation
+                {
+                    From = 0,
+                    To = 360,
+                    Duration = TimeSpan.FromSeconds(40),
+                    RepeatBehavior = RepeatBehavior.Forever
+                };
+                HeroRuneRotateTransform.BeginAnimation(RotateTransform.AngleProperty, outerRuneSpin);
+
+                var innerRuneSpin = new DoubleAnimation
+                {
+                    From = 0,
+                    To = -360,
+                    Duration = TimeSpan.FromSeconds(25),
+                    RepeatBehavior = RepeatBehavior.Forever
+                };
+                HeroInnerRuneRotateTransform.BeginAnimation(RotateTransform.AngleProperty, innerRuneSpin);
+            }
+            catch
+            {
+                // Silently ignore if animations fail on low-power devices
+            }
         }
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -147,11 +164,10 @@ namespace AetherClient.Views
         }
 
         /// <summary>
-        /// Drives hardware-accelerated UIElement.BeginAnimation transitions across IDLE, HUNTING, and CONNECTED states.
+        /// Dynamically alters the visual pulse and aura across Idle, Hunting, and Connected states.
         /// </summary>
         private void ApplyConnectionStateAnimations(TunnelConnectionState state)
         {
-            // Clear existing dynamic animations before applying new state profile
             AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
             AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
             RadarRotateTransform.BeginAnimation(RotateTransform.AngleProperty, null);
@@ -159,17 +175,16 @@ namespace AetherClient.Views
 
             if (state == TunnelConnectionState.Idle)
             {
-                // IDLE: Soft breathing aura using Marcille's Primary Cloak Teal/Cyan (#22B8CF)
-                var cyanColor = (Color)FindResource("PrimaryCyanGlowColor");
-                AuraOuterRing.Stroke = new SolidColorBrush(cyanColor);
-                OrbitalDashedRing.Stroke = new SolidColorBrush(cyanColor);
-                AuraDropShadow.Color = cyanColor;
+                // IDLE: Soft cyan mana breathing
+                var tealColor = (Color)FindResource("TealManaColor");
+                AuraOuterRing.Stroke = new SolidColorBrush(tealColor);
+                AuraDropShadow.Color = (Color)FindResource("CyanGlowColor");
 
                 var breatheAnimation = new DoubleAnimation
                 {
-                    From = 0.96,
-                    To = 1.04,
-                    Duration = TimeSpan.FromSeconds(2.4),
+                    From = 0.95,
+                    To = 1.08,
+                    Duration = TimeSpan.FromSeconds(2.2),
                     AutoReverse = true,
                     RepeatBehavior = RepeatBehavior.Forever,
                     EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
@@ -180,17 +195,16 @@ namespace AetherClient.Views
             }
             else if (state == TunnelConnectionState.Hunting)
             {
-                // HUNTING: Rotating radar sweep using Marcille's Golden Blonde Highlight (#F5A623)
-                var goldColor = (Color)FindResource("SecondaryGoldColor");
-                AuraOuterRing.Stroke = new SolidColorBrush(goldColor);
-                OrbitalDashedRing.Stroke = new SolidColorBrush(goldColor);
-                AuraDropShadow.Color = goldColor;
+                // HUNTING: Amber radar pulse + high-speed radar sweep
+                var amberColor = (Color)FindResource("AmberWarmColor");
+                AuraOuterRing.Stroke = new SolidColorBrush(amberColor);
+                AuraDropShadow.Color = amberColor;
 
                 var pulseAnimation = new DoubleAnimation
                 {
-                    From = 0.94,
-                    To = 1.06,
-                    Duration = TimeSpan.FromSeconds(0.9),
+                    From = 0.92,
+                    To = 1.12,
+                    Duration = TimeSpan.FromSeconds(0.8),
                     AutoReverse = true,
                     RepeatBehavior = RepeatBehavior.Forever,
                     EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
@@ -198,28 +212,27 @@ namespace AetherClient.Views
                 AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, pulseAnimation);
                 AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, pulseAnimation);
 
-                var radarSweepAnimation = new DoubleAnimation
+                var radarSweep = new DoubleAnimation
                 {
                     From = 0,
                     To = 360,
-                    Duration = TimeSpan.FromSeconds(1.35),
+                    Duration = TimeSpan.FromSeconds(1.2),
                     RepeatBehavior = RepeatBehavior.Forever
                 };
-                RadarRotateTransform.BeginAnimation(RotateTransform.AngleProperty, radarSweepAnimation);
+                RadarRotateTransform.BeginAnimation(RotateTransform.AngleProperty, radarSweep);
             }
             else if (state == TunnelConnectionState.Connected)
             {
-                // CONNECTED: Vibrant Mana Emerald aura (#4ADE80) + animated micro equalizer telemetry bars
+                // CONNECTED: Radiant emerald mana shield + dancing micro-equalizer audio bars
                 var emeraldColor = (Color)FindResource("ConnectedEmeraldColor");
                 AuraOuterRing.Stroke = new SolidColorBrush(emeraldColor);
-                OrbitalDashedRing.Stroke = new SolidColorBrush(emeraldColor);
                 AuraDropShadow.Color = emeraldColor;
 
                 var connectedPulse = new DoubleAnimation
                 {
                     From = 0.98,
-                    To = 1.03,
-                    Duration = TimeSpan.FromSeconds(1.8),
+                    To = 1.05,
+                    Duration = TimeSpan.FromSeconds(1.6),
                     AutoReverse = true,
                     RepeatBehavior = RepeatBehavior.Forever,
                     EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
@@ -233,10 +246,10 @@ namespace AetherClient.Views
 
         private void StartEqualizerAnimations()
         {
-            AnimateEqualizerBar(EqBar1, 4, 13, 380);
-            AnimateEqualizerBar(EqBar2, 5, 14, 290);
-            AnimateEqualizerBar(EqBar3, 3, 12, 430);
-            AnimateEqualizerBar(EqBar4, 6, 14, 320);
+            AnimateEqualizerBar(EqBar1, 3, 14, 380);
+            AnimateEqualizerBar(EqBar2, 5, 16, 280);
+            AnimateEqualizerBar(EqBar3, 2, 12, 420);
+            AnimateEqualizerBar(EqBar4, 6, 16, 310);
             AnimateEqualizerBar(EqBar5, 4, 11, 360);
         }
 
