@@ -1,239 +1,397 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AetherClient.Models;
 
-namespace AetherClient.Core
+namespace AetherClient.Core;
+
+public sealed partial class AetherProcessService : IDisposable
 {
-    public sealed partial class AetherProcessService : IDisposable
+    private const string ExecutableName = "aether.exe";
+    public const string LocalProxyHost = "127.0.0.1";
+    public const int LocalHttpProxyPort = 1820;
+    public const int LocalSocksProxyPort = 1819;
+
+    [GeneratedRegex(@"masque exit:\s*([^,]+),\s*([^,]+),\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex MasqueExitRegex();
+
+    [GeneratedRegex(@"\b(?:162\.159|188\.114)\.\d{1,3}\.\d{1,3}:\d{2,5}\b", RegexOptions.Compiled)]
+    private static partial Regex EndpointRegex();
+
+    private readonly JobObjectManager _jobManager;
+    private readonly SemaphoreSlim _lifecycleLock = new(1, 1);
+    private Process? _process;
+    private CancellationTokenSource? _cts;
+    private bool _isStopping;
+
+    public event Action<string>? LogReceived;
+    public event Action? SocksServerReady;
+    public event Action<bool>? TunnelStateChanged;
+    public event Action<ExitNodeTelemetry>? TelemetryUpdated;
+    public event Action<string>? ActiveEndpointDetected;
+    public event Action<int>? ProcessExitedUnexpectedly;
+
+    public bool IsRunning => _process is { HasExited: false };
+    public string? ActivePeer { get; private set; }
+
+    public AetherProcessService(JobObjectManager jobManager)
     {
-        private const string ExecutableName = "aether.exe";
-        private const string ReadyTrigger = "socks5 server listening";
+        _jobManager = jobManager ?? throw new ArgumentNullException(nameof(jobManager));
+    }
 
-        [GeneratedRegex(@"masque exit:\s*([^,]+),\s*([^,]+),\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
-        private static partial Regex MasqueExitRegex();
-
-        private readonly JobObjectManager _jobManager;
-        private readonly object _syncLock = new();
-        private Process? _process;
-        private CancellationTokenSource? _cts;
-        private bool _isStopping;
-
-        public event Action<string>? LogReceived;
-        public event Action? SocksServerReady;
-        public event Action<ExitNodeTelemetry>? TelemetryUpdated;
-        public event Action<int>? ProcessExitedUnexpectedly;
-
-        public bool IsRunning
-        {
-            get
-            {
-                lock (_syncLock)
-                {
-                    return _process is { HasExited: false };
-                }
-            }
-        }
-
-        public AetherProcessService(JobObjectManager jobManager)
-        {
-            _jobManager = jobManager;
-        }
-
-        public static void KillOrphanedProcesses()
-        {
-            foreach (var proc in Process.GetProcessesByName("aether"))
-            {
-                try
-                {
-                    proc.Kill(entireProcessTree: true);
-                }
-                catch { }
-                finally
-                {
-                    proc.Dispose();
-                }
-            }
-        }
-
-        public Task StartAsync(bool forceFreshScan = false)
-        {
-            string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ExecutableName);
-            if (!File.Exists(exePath))
-                throw new FileNotFoundException($"Backend core binary '{ExecutableName}' was not found in {AppDomain.CurrentDomain.BaseDirectory}.", exePath);
-
-            lock (_syncLock)
-            {
-                if (_process is { HasExited: false })
-                    return Task.CompletedTask;
-
-                _isStopping = false;
-                _cts = new CancellationTokenSource();
-
-                string scanFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
-                string arguments = $"--masque --h2 -4 --turbo {scanFlag} --http-proxy 127.0.0.1:1820";
-
-                var psi = new ProcessStartInfo
-                {
-                    FileName = exePath,
-                    Arguments = arguments,
-                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    StandardOutputEncoding = Encoding.UTF8,
-                    StandardErrorEncoding = Encoding.UTF8
-                };
-
-                var process = new Process
-                {
-                    StartInfo = psi,
-                    EnableRaisingEvents = true
-                };
-
-                process.Exited += OnProcessExited;
-
-                if (!process.Start())
-                    throw new InvalidOperationException("Failed to start aether.exe process.");
-
-                _jobManager.AssignProcess(process);
-                _process = process;
-
-                // Close stdin immediately so aether.exe never blocks on interactive prompts
-                try { process.StandardInput.Close(); } catch { }
-
-                _ = ConsumeStreamAsync(process.StandardOutput, _cts.Token);
-                _ = ConsumeStreamAsync(process.StandardError, _cts.Token);
-
-                EmitLog($"[SYS] Launched {ExecutableName} {arguments} (PID: {process.Id})");
-            }
-
-            return Task.CompletedTask;
-        }
-
-        private async Task ConsumeStreamAsync(StreamReader reader, CancellationToken token)
+    public static void KillOrphanedProcesses()
+    {
+        foreach (var proc in Process.GetProcessesByName("aether"))
         {
             try
             {
-                while (!token.IsCancellationRequested)
+                proc.Kill(entireProcessTree: true);
+            }
+            catch { }
+            finally
+            {
+                proc.Dispose();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Starts the underlying MASQUE HTTP/2 core engine.
+    /// If customPeer is provided, appends --peer {customPeer} and connects directly in <400ms.
+    /// </summary>
+    public async Task<bool> StartAsync(
+        bool forceFreshScan = false,
+        string? customPeer = null,
+        CancellationToken cancellationToken = default)
+    {
+        await _lifecycleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (IsRunning)
+            {
+                await StopInternalAsync().ConfigureAwait(false);
+            }
+
+            string exePath = ResolveBinaryPath();
+            if (!File.Exists(exePath))
+            {
+                EmitLog($"[CRITICAL] Backend core binary '{ExecutableName}' not found in {AppDomain.CurrentDomain.BaseDirectory}");
+                return false;
+            }
+
+            _isStopping = false;
+            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            bool isCustomPeer = !string.IsNullOrWhiteSpace(customPeer) &&
+                                !customPeer.Equals("Auto", StringComparison.OrdinalIgnoreCase);
+
+            string modeArgs;
+            if (isCustomPeer)
+            {
+                string peer = customPeer!.Trim();
+                modeArgs = $"--peer {peer} --quick-reconnect";
+                ActivePeer = peer;
+                EmitLog($"[RADAR-LOCK] Engaging direct MASQUE Anycast lock -> {peer}");
+            }
+            else
+            {
+                string scanFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
+                modeArgs = $"--turbo {scanFlag}";
+                ActivePeer = "Auto (Turbo)";
+                EmitLog($"[TURBO-MESH] Engaging Cloudflare Anycast Turbo mode ({modeArgs})");
+            }
+
+            string arguments = $"--masque --h2 -4 {modeArgs} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
+            EmitLog($"[EXEC] {ExecutableName} {arguments}");
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = exePath,
+                Arguments = arguments,
+                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8
+            };
+
+            _process = new Process
+            {
+                StartInfo = psi,
+                EnableRaisingEvents = true
+            };
+
+            _process.Exited += OnProcessExited;
+
+            var readyTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            void OnReadyDetected()
+            {
+                readyTcs.TrySetResult(true);
+            }
+
+            SocksServerReady += OnReadyDetected;
+
+            if (!_process.Start())
+            {
+                SocksServerReady -= OnReadyDetected;
+                EmitLog("[ERROR] Failed to spawn aether.exe process.");
+                return false;
+            }
+
+            // Bind process to Windows Job Object for guaranteed orphan termination
+            _jobManager.AssignProcess(_process);
+
+            // Close stdin so Aether never waits for interactive CLI prompts
+            try { _process.StandardInput.Close(); } catch { }
+
+            _ = ConsumeStreamAsync(_process.StandardOutput, _cts.Token);
+            _ = ConsumeStreamAsync(_process.StandardError, _cts.Token);
+
+            if (isCustomPeer)
+            {
+                ActiveEndpointDetected?.Invoke(customPeer!);
+            }
+
+            // Wait for core to expose SOCKS5 or HTTP proxy listener
+            int timeoutMs = isCustomPeer ? 8000 : 25000;
+            using var timeoutCts = new CancellationTokenSource(timeoutMs);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+            try
+            {
+                var probeTask = WaitForProxySocketAsync(linkedCts.Token);
+                var completed = await Task.WhenAny(readyTcs.Task, probeTask).ConfigureAwait(false);
+
+                if (completed == readyTcs.Task && await readyTcs.Task.ConfigureAwait(false))
                 {
-                    string? line = await reader.ReadLineAsync(token).ConfigureAwait(false);
-                    if (line is null)
-                        break;
-
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    ParseAndDispatchLine(line);
+                    // Ready via logs
+                }
+                else if (completed == probeTask && await probeTask.ConfigureAwait(false))
+                {
+                    // Ready via socket probe
+                }
+                else
+                {
+                    EmitLog("[TIMEOUT] MASQUE core proxy listener did not respond in time.");
+                    await StopInternalAsync().ConfigureAwait(false);
+                    return false;
                 }
             }
-            catch (OperationCanceledException)
+            finally
             {
-                // Expected during shutdown
+                SocksServerReady -= OnReadyDetected;
             }
-            catch (Exception ex)
-            {
-                EmitLog($"[SYS-WARN] Stream reader error: {ex.Message}");
-            }
+
+            TunnelStateChanged?.Invoke(true);
+            return true;
         }
-
-        private void ParseAndDispatchLine(string rawLine)
+        catch (OperationCanceledException)
         {
-            string line = rawLine.Trim();
-            EmitLog(line);
-
-            // Check for Masque Exit Node Telemetry
-            var match = MasqueExitRegex().Match(line);
-            if (match.Success)
-            {
-                string ip = match.Groups[1].Value.Trim();
-                string route = match.Groups[2].Value.Trim();
-                string rtt = match.Groups[3].Value.Trim();
-                TelemetryUpdated?.Invoke(new ExitNodeTelemetry(ip, route, rtt));
-            }
-
-            // Check for SOCKS5 Ready state
-            if (line.Contains(ReadyTrigger, StringComparison.OrdinalIgnoreCase))
-            {
-                SocksServerReady?.Invoke();
-            }
+            EmitLog("[SYS] StartAsync canceled.");
+            await StopInternalAsync().ConfigureAwait(false);
+            return false;
         }
-
-        private void OnProcessExited(object? sender, EventArgs e)
+        catch (Exception ex)
         {
-            int exitCode = -1;
-            if (sender is Process proc)
-            {
-                try { exitCode = proc.ExitCode; } catch { }
-            }
-
-            bool wasUnexpected;
-            lock (_syncLock)
-            {
-                wasUnexpected = !_isStopping;
-            }
-
-            if (wasUnexpected)
-            {
-                EmitLog($"[SYS-ERR] aether.exe terminated unexpectedly (Exit Code: {exitCode}).");
-                ProcessExitedUnexpectedly?.Invoke(exitCode);
-            }
+            EmitLog($"[EXCEPTION] StartAsync error: {ex.Message}");
+            await StopInternalAsync().ConfigureAwait(false);
+            return false;
         }
-
-        public void Stop()
+        finally
         {
-            Process? procToKill;
-            CancellationTokenSource? ctsToCancel;
+            _lifecycleLock.Release();
+        }
+    }
 
-            lock (_syncLock)
+    public async Task StopAsync()
+    {
+        await _lifecycleLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await StopInternalAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _lifecycleLock.Release();
+        }
+    }
+
+    public void Stop()
+    {
+        StopAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task StopInternalAsync()
+    {
+        _isStopping = true;
+
+        try
+        {
+            if (_cts is not null)
             {
-                _isStopping = true;
-                procToKill = _process;
-                _process = null;
-                ctsToCancel = _cts;
+                await _cts.CancelAsync().ConfigureAwait(false);
+                _cts.Dispose();
                 _cts = null;
             }
+        }
+        catch { }
 
-            try { ctsToCancel?.Cancel(); } catch { }
-            try { ctsToCancel?.Dispose(); } catch { }
-
-            if (procToKill is not null)
+        if (_process is not null)
+        {
+            try
             {
-                try
+                _process.Exited -= OnProcessExited;
+                if (!_process.HasExited)
                 {
-                    procToKill.Exited -= OnProcessExited;
-                    if (!procToKill.HasExited)
-                    {
-                        procToKill.Kill(entireProcessTree: true);
-                        procToKill.WaitForExit(2000);
-                        EmitLog("[SYS] aether.exe process tree terminated cleanly.");
-                    }
+                    _process.Kill(entireProcessTree: true);
+                    using var killTimeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    await _process.WaitForExitAsync(killTimeoutCts.Token).ConfigureAwait(false);
+                    EmitLog("[SYS] aether.exe process tree terminated cleanly.");
                 }
-                catch (Exception ex)
-                {
-                    EmitLog($"[SYS-WARN] Error stopping aether.exe: {ex.Message}");
-                }
-                finally
-                {
-                    procToKill.Dispose();
-                }
+            }
+            catch { }
+            finally
+            {
+                _process.Dispose();
+                _process = null;
             }
         }
 
-        private void EmitLog(string message)
+        ActivePeer = null;
+        TunnelStateChanged?.Invoke(false);
+    }
+
+    private async Task<bool> WaitForProxySocketAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
         {
-            LogReceived?.Invoke($"[{DateTime.Now:HH:mm:ss}] {message}");
+            if (_process is { HasExited: true })
+                return false;
+
+            try
+            {
+                using var tcp = new TcpClient();
+                using var probeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                probeCts.CancelAfter(200);
+
+                await tcp.ConnectAsync(LocalProxyHost, LocalHttpProxyPort, probeCts.Token).ConfigureAwait(false);
+                return true;
+            }
+            catch
+            {
+                await Task.Delay(40, ct).ConfigureAwait(false);
+            }
         }
 
-        public void Dispose()
+        return false;
+    }
+
+    private async Task ConsumeStreamAsync(StreamReader reader, CancellationToken token)
+    {
+        try
         {
-            Stop();
+            while (!token.IsCancellationRequested)
+            {
+                string? line = await reader.ReadLineAsync(token).ConfigureAwait(false);
+                if (line is null)
+                    break;
+
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                ParseAndDispatchLine(line);
+            }
         }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            EmitLog($"[SYS-WARN] StreamReader exception: {ex.Message}");
+        }
+    }
+
+    private void ParseAndDispatchLine(string rawLine)
+    {
+        string line = rawLine.Trim();
+        EmitLog(line);
+
+        // Check for Masque Exit Node Telemetry (e.g. [+] masque exit: 104.28.214.167, IR via FRA, 175ms to cloudflare)
+        var exitMatch = MasqueExitRegex().Match(line);
+        if (exitMatch.Success)
+        {
+            string ip = exitMatch.Groups[1].Value.Trim();
+            string route = exitMatch.Groups[2].Value.Trim();
+            string rtt = exitMatch.Groups[3].Value.Trim();
+            TelemetryUpdated?.Invoke(new ExitNodeTelemetry(ip, route, rtt));
+        }
+
+        // Check for SOCKS5 or HTTP listener readiness
+        if (line.Contains("socks5 server listening", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("http proxy listening", StringComparison.OrdinalIgnoreCase))
+        {
+            SocksServerReady?.Invoke();
+        }
+
+        // Check for forced or detected peer IP
+        var epMatch = EndpointRegex().Match(line);
+        if (epMatch.Success && (line.Contains("forced peer") || line.Contains("using cloudflare edge") || line.Contains("MASQUE transport")))
+        {
+            ActivePeer = epMatch.Value;
+            ActiveEndpointDetected?.Invoke(epMatch.Value);
+        }
+    }
+
+    private void OnProcessExited(object? sender, EventArgs e)
+    {
+        int exitCode = -1;
+        if (sender is Process proc)
+        {
+            try { exitCode = proc.ExitCode; } catch { }
+        }
+
+        if (!_isStopping)
+        {
+            EmitLog($"[SYS-ERR] aether.exe exited unexpectedly (Code: {exitCode}).");
+            TunnelStateChanged?.Invoke(false);
+            ProcessExitedUnexpectedly?.Invoke(exitCode);
+        }
+    }
+
+    private static string ResolveBinaryPath()
+    {
+        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        string[] candidates =
+        [
+            Path.Combine(baseDir, ExecutableName),
+            Path.Combine(baseDir, "bin", ExecutableName),
+            Path.Combine(baseDir, "core", ExecutableName)
+        ];
+
+        foreach (string path in candidates)
+        {
+            if (File.Exists(path))
+                return path;
+        }
+
+        return candidates[0];
+    }
+
+    private void EmitLog(string message)
+    {
+        LogReceived?.Invoke($"[{DateTime.Now:HH:mm:ss}] {message}");
+    }
+
+    public void Dispose()
+    {
+        Stop();
+        _lifecycleLock.Dispose();
     }
 }

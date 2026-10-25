@@ -1,299 +1,513 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using System.Windows.Threading;
 using AetherClient.Core;
 using AetherClient.Models;
 using AetherClient.Network;
+using AetherClient.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
-namespace AetherClient.ViewModels
+namespace AetherClient.ViewModels;
+
+public enum CyberConnectionState
 {
-    public sealed partial class MainViewModel : ObservableObject, IDisposable
+    Idle,
+    Hunting,
+    Connected
+}
+
+public sealed partial class MainViewModel : ObservableObject, IDisposable
+{
+    private const int MaxLogEntries = 300;
+
+    private readonly EdgePingService _pingService;
+    private readonly JobObjectManager _jobManager;
+    private readonly AetherProcessService _processService;
+    private readonly WinInetProxyManager _proxyManager;
+    private readonly TunEngineManager _tunManager;
+    private readonly DispatcherTimer _uptimeTimer;
+
+    private CancellationTokenSource? _connectionCts;
+    private CancellationTokenSource? _pingCts;
+    private DateTime _connectedSinceUtc;
+    private bool _disposed;
+
+    public ObservableCollection<EdgeNodeModel> EdgeNodes { get; } = new();
+    public ObservableCollection<string> TelemetryLogs { get; } = new();
+
+    public event Action<ConnectionState, TunnelMode>? StateChanged;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsIdle))]
+    [NotifyPropertyChangedFor(nameof(IsHunting))]
+    [NotifyPropertyChangedFor(nameof(IsConnected))]
+    [NotifyPropertyChangedFor(nameof(PrimaryActionText))]
+    [NotifyPropertyChangedFor(nameof(PrimaryActionSubtext))]
+    private CyberConnectionState _connectionState = CyberConnectionState.Idle;
+
+    [ObservableProperty]
+    private EdgeNodeModel? _selectedNode;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSystemProxyMode))]
+    [NotifyPropertyChangedFor(nameof(ActiveRoutingBadge))]
+    private bool _isTunMode = true;
+
+    [ObservableProperty]
+    private bool _isPingingRadar;
+
+    [ObservableProperty]
+    private string _statusHeadline = "STANDBY // AETHER MASQUE READY";
+
+    [ObservableProperty]
+    private string _statusSubtext = "Select an Anycast Clean IP or engage Auto Turbo Mesh";
+
+    [ObservableProperty]
+    private string _activeEndpointDisplay = "AUTO TURBO MESH";
+
+    [ObservableProperty]
+    private string _sessionUptime = "00:00:00";
+
+    [ObservableProperty]
+    private string _radarSummaryText = "Embedded Anycast Radar Armed";
+
+    [ObservableProperty]
+    private string _lastHandshakeDuration = "-- ms";
+
+    public bool IsIdle => ConnectionState == CyberConnectionState.Idle;
+    public bool IsHunting => ConnectionState == CyberConnectionState.Hunting;
+    public bool IsConnected => ConnectionState == CyberConnectionState.Connected;
+    public bool IsSystemProxyMode => !IsTunMode;
+
+    public string ActiveRoutingBadge => IsTunMode ? "WINTUN L3 KERNEL TUN" : "WININET SYSTEM PROXY";
+
+    public string PrimaryActionText => ConnectionState switch
     {
-        private const int MaxLogEntries = 800;
+        CyberConnectionState.Idle => "ENGAGE MASQUE LINK",
+        CyberConnectionState.Hunting => "LOCKING CLEAN IP...",
+        CyberConnectionState.Connected => "TERMINATE LINK",
+        _ => "ENGAGE MASQUE LINK"
+    };
 
-        private readonly JobObjectManager _jobManager;
-        private readonly AetherProcessService _processService;
-        private readonly WinInetProxyManager _proxyManager;
-        private readonly TunEngineManager _tunManager;
-        private CancellationTokenSource? _tunnelCts;
-        private bool _disposed;
+    public string PrimaryActionSubtext => ConnectionState switch
+    {
+        CyberConnectionState.Idle => SelectedNode is { IsAuto: false }
+            ? $"DIRECT PEER LOCK // {SelectedNode.Endpoint}"
+            : "TURBO ANYCAST MESH // HTTP/2 RFC 9298",
+        CyberConnectionState.Hunting => "ESTABLISHING ZERO-LEAK TLS 1.3 MASQUE STREAM",
+        CyberConnectionState.Connected => $"PROTECTED VIA {ActiveEndpointDisplay} // {SessionUptime}",
+        _ => string.Empty
+    };
 
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(StateBadgeText))]
-        [NotifyPropertyChangedFor(nameof(ConnectButtonText))]
-        [NotifyPropertyChangedFor(nameof(ConnectButtonSubText))]
-        [NotifyPropertyChangedFor(nameof(CanChangeMode))]
-        private ConnectionState _currentState = ConnectionState.Disconnected;
+    public MainViewModel()
+    {
+        // Sanitize any orphaned OS state from prior unexpected exits
+        AetherProcessService.KillOrphanedProcesses();
+        WinInetProxyManager.SanitizeOrphanedProxySettings();
+        TunEngineManager.CleanupOrphanedTunState();
 
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(IsSystemProxyMode))]
-        [NotifyPropertyChangedFor(nameof(IsTrueTunMode))]
-        private TunnelMode _selectedMode = TunnelMode.SystemProxy;
+        _jobManager = new JobObjectManager();
+        _pingService = new EdgePingService();
+        _processService = new AetherProcessService(_jobManager);
+        _proxyManager = new WinInetProxyManager(AppendLog);
+        _tunManager = new TunEngineManager(_jobManager, AppendLog);
 
-        [ObservableProperty]
-        private string _exitIp = "—";
+        _processService.LogReceived += AppendLog;
+        _processService.TunnelStateChanged += OnProcessTunnelStateChanged;
+        _processService.ActiveEndpointDetected += OnActiveEndpointDetected;
+        _processService.TelemetryUpdated += OnTelemetryUpdated;
 
-        [ObservableProperty]
-        private string _exitRoute = "—";
-
-        [ObservableProperty]
-        private string _exitRtt = "—";
-
-        [ObservableProperty]
-        private string _pingQualityColor = "#64748B";
-
-        [ObservableProperty]
-        private bool _isFreshScan = false;
-
-        [ObservableProperty]
-        private bool _isLogExpanded = false;
-
-        public ObservableCollection<string> DiagnosticLogs { get; } = new();
-
-        public event Action<ConnectionState, TunnelMode>? StateChanged;
-
-        public string StateBadgeText => CurrentState switch
+        _uptimeTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            ConnectionState.Connected => "CONNECTED",
-            ConnectionState.Hunting   => "HUNTING",
-            _                         => "DISCONNECTED"
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _uptimeTimer.Tick += (_, _) =>
+        {
+            if (ConnectionState == CyberConnectionState.Connected)
+            {
+                TimeSpan elapsed = DateTime.UtcNow - _connectedSinceUtc;
+                SessionUptime = elapsed.ToString(@"hh\:mm\:ss");
+                OnPropertyChanged(nameof(PrimaryActionSubtext));
+            }
         };
 
-        public string ConnectButtonText => CurrentState switch
-        {
-            ConnectionState.Connected => "DISCONNECT",
-            ConnectionState.Hunting   => "ABORT HUNT",
-            _                         => "CONNECT"
-        };
+        InitializeNodes();
 
-        public string ConnectButtonSubText => CurrentState switch
-        {
-            ConnectionState.Connected => SelectedMode == TunnelMode.TrueTun
-                ? "Full TUN Active (0.0.0.0/0 -> 127.0.0.1:1819)"
-                : "System Proxy Active (WinINET -> 127.0.0.1:1819)",
-            ConnectionState.Hunting   => IsFreshScan
-                ? "Hunting new edge gateway (Deep Scan)..."
-                : "Verifying cached gateway & hunting...",
-            _                         => IsFreshScan
-                ? "Click to start deep gateway hunt"
-                : "Click for instant quick reconnect"
-        };
+        // Background non-blocking ping sweep on startup
+        _ = PingAllNodesAsync();
+    }
 
-        public bool CanChangeMode => CurrentState == ConnectionState.Disconnected;
-
-        public bool IsSystemProxyMode
+    private void InitializeNodes()
+    {
+        var initialNodes = _pingService.LoadInitialNodePool();
+        EdgeNodes.Clear();
+        foreach (var node in initialNodes)
         {
-            get => SelectedMode == TunnelMode.SystemProxy;
-            set
-            {
-                if (value && CanChangeMode)
-                    SelectedMode = TunnelMode.SystemProxy;
-            }
+            EdgeNodes.Add(node);
         }
 
-        public bool IsTrueTunMode
+        SelectedNode = EdgeNodes.FirstOrDefault(n => n.IsAuto) ?? EdgeNodes.FirstOrDefault();
+        if (SelectedNode is not null)
         {
-            get => SelectedMode == TunnelMode.TrueTun;
-            set
-            {
-                if (value && CanChangeMode)
-                    SelectedMode = TunnelMode.TrueTun;
-            }
+            SelectedNode.IsSelected = true;
+            ActiveEndpointDisplay = SelectedNode.IsAuto ? "AUTO TURBO MESH" : SelectedNode.Endpoint;
         }
 
-        public MainViewModel()
+        AppendLog("[INIT] Aether Cyber-Glass HUD ready. Clean IP pool armed.");
+    }
+
+    partial void OnSelectedNodeChanged(EdgeNodeModel? value)
+    {
+        if (value is null)
+            return;
+
+        foreach (var node in EdgeNodes)
         {
-            // Sanitize any leftover OS state from prior forced power-offs
-            AetherProcessService.KillOrphanedProcesses();
-            WinInetProxyManager.SanitizeOrphanedProxySettings();
-            TunEngineManager.CleanupOrphanedTunState();
-
-            _jobManager = new JobObjectManager();
-            _processService = new AetherProcessService(_jobManager);
-            _proxyManager = new WinInetProxyManager(AppendLog);
-            _tunManager = new TunEngineManager(_jobManager, AppendLog);
-
-            _processService.LogReceived += AppendLog;
-            _processService.TelemetryUpdated += OnTelemetryUpdated;
-            _processService.SocksServerReady += OnSocksServerReady;
-            _processService.ProcessExitedUnexpectedly += OnProcessExitedUnexpectedly;
-
-            AppendLog($"[{DateTime.Now:HH:mm:ss}] [SYS] Aether Desktop Client initialized. Ready.");
+            node.IsSelected = ReferenceEquals(node, value);
         }
 
-        [RelayCommand]
-        public async Task ToggleConnectionAsync()
+        if (ConnectionState == CyberConnectionState.Idle)
         {
-            if (CurrentState != ConnectionState.Disconnected)
-            {
-                await DisconnectAsync().ConfigureAwait(false);
-                return;
-            }
-
-            await ConnectAsync().ConfigureAwait(false);
+            ActiveEndpointDisplay = value.IsAuto ? "AUTO TURBO MESH" : value.Endpoint;
+            StatusSubtext = value.IsAuto
+                ? "Automatic Anycast selection enabled (--turbo)"
+                : $"Pinned to {value.Name} (--peer {value.Endpoint})";
         }
 
-        private async Task ConnectAsync()
-        {
-            try
-            {
-                _tunnelCts = new CancellationTokenSource();
-                ResetTelemetry();
-                SetState(ConnectionState.Hunting);
+        OnPropertyChanged(nameof(PrimaryActionSubtext));
+    }
 
-                await _processService.StartAsync(IsFreshScan).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                AppendLog($"[{DateTime.Now:HH:mm:ss}] [SYS-ERR] Startup failure: {ex.Message}");
-                await DisconnectAsync().ConfigureAwait(false);
-            }
+    [RelayCommand]
+    private void SelectNode(EdgeNodeModel? node)
+    {
+        if (node is null)
+            return;
+
+        SelectedNode = node;
+    }
+
+    [RelayCommand]
+    private void LockFastestNode()
+    {
+        var fastest = EdgeNodes
+            .Where(n => !n.IsAuto && n.LatencyMs > 0)
+            .OrderBy(n => n.LatencyMs)
+            .FirstOrDefault();
+
+        if (fastest is not null)
+        {
+            SelectedNode = fastest;
+            AppendLog($"[RADAR] Locked onto lowest-latency edge: {fastest.Name} ({fastest.Endpoint} @ {fastest.LatencyMs} ms)");
+        }
+    }
+
+    [RelayCommand]
+    private void SetRoutingMode(string? mode)
+    {
+        if (ConnectionState != CyberConnectionState.Idle)
+        {
+            AppendLog("[WARN] Disconnect the active tunnel before changing routing mode.");
+            return;
         }
 
-        private async void OnSocksServerReady()
+        bool targetTun = string.Equals(mode, "TUN", StringComparison.OrdinalIgnoreCase);
+        if (IsTunMode == targetTun)
+            return;
+
+        IsTunMode = targetTun;
+        AppendLog($"[MODE] Routing architecture set to {(IsTunMode ? "True Wintun Kernel TUN" : "WinINET System Proxy (127.0.0.1:1820)")}.");
+    }
+
+    [RelayCommand]
+    private async Task PingAllNodesAsync()
+    {
+        if (IsPingingRadar)
+            return;
+
+        try
         {
-            if (CurrentState == ConnectionState.Connected)
-                return;
+            IsPingingRadar = true;
+            _pingCts?.Cancel();
+            _pingCts = new CancellationTokenSource();
 
-            try
+            RadarSummaryText = "Sweeping Anycast TCP Edges...";
+            AppendLog("[RADAR] Initiating parallel TCP handshake sweep across Cloudflare Anycast pool (1200ms timeout)...");
+
+            string? currentSelectedEndpoint = SelectedNode?.Endpoint;
+            var sortedNodes = await _pingService.PingAllNodesAsync(EdgeNodes, _pingCts.Token).ConfigureAwait(true);
+
+            EdgeNodes.Clear();
+            foreach (var node in sortedNodes)
             {
-                CancellationToken token = _tunnelCts?.Token ?? CancellationToken.None;
-
-                if (SelectedMode == TunnelMode.SystemProxy)
-                {
-                    _proxyManager.EnableProxy();
-                }
-                else
-                {
-                    string? currentExitIp = ExitIp != "—" ? ExitIp : null;
-                    await _tunManager.StartTunAsync(currentExitIp, token).ConfigureAwait(false);
-                }
-
-                SetState(ConnectionState.Connected);
+                EdgeNodes.Add(node);
             }
-            catch (OperationCanceledException)
+
+            var restored = EdgeNodes.FirstOrDefault(n => string.Equals(n.Endpoint, currentSelectedEndpoint, StringComparison.OrdinalIgnoreCase))
+                           ?? EdgeNodes.FirstOrDefault();
+
+            SelectedNode = restored;
+
+            int reachableCount = EdgeNodes.Count(n => !n.IsAuto && n.LatencyMs > 0);
+            int totalStatic = EdgeNodes.Count(n => !n.IsAuto);
+            var bestNode = EdgeNodes.FirstOrDefault(n => !n.IsAuto && n.LatencyMs > 0);
+
+            if (bestNode is not null)
             {
-                // Canceled by user during initialization
+                RadarSummaryText = $"{reachableCount}/{totalStatic} Online • Best: {bestNode.RegionCode} {bestNode.LatencyMs} ms";
+                AppendLog($"[RADAR] Sweep complete: {reachableCount}/{totalStatic} clean IPs verified. Fastest: {bestNode.Name} ({bestNode.Endpoint}) @ {bestNode.LatencyMs} ms.");
             }
-            catch (Exception ex)
+            else
             {
-                AppendLog($"[{DateTime.Now:HH:mm:ss}] [NET-ERR] Tunnel routing failed: {ex.Message}");
-                await DisconnectAsync().ConfigureAwait(false);
+                RadarSummaryText = $"0/{totalStatic} Reachable • Check ISP Link";
+                AppendLog("[RADAR] Sweep complete: All tested endpoints timed out (>1200ms).");
             }
         }
-
-        private void OnTelemetryUpdated(ExitNodeTelemetry telemetry)
+        catch (OperationCanceledException)
         {
-            Application.Current?.Dispatcher.InvokeAsync(() =>
-            {
-                ExitIp = telemetry.IpAddress;
-                ExitRoute = telemetry.Route;
-                ExitRtt = telemetry.Rtt;
+            RadarSummaryText = "Radar Sweep Canceled";
+        }
+        catch (Exception ex)
+        {
+            RadarSummaryText = "Radar Sweep Error";
+            AppendLog($"[RADAR-ERR] {ex.Message}");
+        }
+        finally
+        {
+            IsPingingRadar = false;
+        }
+    }
 
-                // Color code latency
-                string color = "#38BDF8";
-                string raw = telemetry.Rtt.Replace("ms", "").Trim();
-                if (double.TryParse(raw, out double ms))
-                {
-                    if (ms < 180) color = "#10B981"; // Emerald
-                    else if (ms < 350) color = "#38BDF8"; // Sky Blue
-                    else if (ms < 600) color = "#F59E0B"; // Amber
-                    else color = "#EF4444"; // Crimson
-                }
-                PingQualityColor = color;
+    [RelayCommand]
+    public async Task ToggleConnectionAsync()
+    {
+        if (ConnectionState == CyberConnectionState.Connected ||
+            ConnectionState == CyberConnectionState.Hunting)
+        {
+            await DisconnectInternalAsync().ConfigureAwait(false);
+            return;
+        }
+
+        await ConnectInternalAsync(forceFreshScan: false).ConfigureAwait(false);
+    }
+
+    [RelayCommand]
+    private async Task ForceRescanConnectAsync()
+    {
+        await ConnectInternalAsync(forceFreshScan: true).ConfigureAwait(false);
+    }
+
+    private async Task ConnectInternalAsync(bool forceFreshScan)
+    {
+        _connectionCts?.Cancel();
+        _connectionCts = new CancellationTokenSource();
+
+        await RunOnUiThreadAsync(() =>
+        {
+            ConnectionState = CyberConnectionState.Hunting;
+            StateChanged?.Invoke(ConnectionState.Hunting, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+
+            string? customPeer = SelectedNode is { IsAuto: false } ? SelectedNode.Endpoint : null;
+            bool isDirectPeer = !string.IsNullOrWhiteSpace(customPeer);
+
+            StatusHeadline = isDirectPeer
+                ? $"LOCKING PEER // {SelectedNode?.Name.ToUpperInvariant()}"
+                : "HUNTING CLEAN MASQUE EDGE...";
+
+            StatusSubtext = isDirectPeer
+                ? $"Establishing direct HTTP/2 MASQUE tunnel via {customPeer}"
+                : "Negotiating Cloudflare WARP Anycast Turbo handshake...";
+        });
+
+        long startTick = Stopwatch.GetTimestamp();
+        string? peerToPass = SelectedNode is { IsAuto: false } ? SelectedNode.Endpoint : null;
+
+        bool started = await _processService.StartAsync(
+            forceFreshScan: forceFreshScan,
+            customPeer: peerToPass,
+            cancellationToken: _connectionCts.Token).ConfigureAwait(false);
+
+        if (!started)
+        {
+            await RunOnUiThreadAsync(() =>
+            {
+                ConnectionState = CyberConnectionState.Idle;
+                StateChanged?.Invoke(ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+                StatusHeadline = "LINK FAILED // RETRY OR SWITCH PEER";
+                StatusSubtext = "Select another green (<180ms) Anycast node from the Clean IP Radar";
             });
+            return;
+        }
 
-            if (SelectedMode == TunnelMode.TrueTun)
+        // Engage system routing layer (Wintun kernel TUN vs WinINET proxy)
+        try
+        {
+            if (IsTunMode)
             {
-                _tunManager.AddBypassHostRoute(telemetry.IpAddress);
+                string? endpointIp = SelectedNode?.IpOnly;
+                await _tunManager.StartTunAsync(endpointIp, _connectionCts.Token).ConfigureAwait(false);
+            }
+            else
+            {
+                _proxyManager.EnableProxy();
             }
         }
-
-        private async void OnProcessExitedUnexpectedly(int exitCode)
+        catch (Exception ex)
         {
-            await DisconnectAsync().ConfigureAwait(false);
+            AppendLog($"[NET-ERR] Routing activation failed: {ex.Message}");
+            await DisconnectInternalAsync().ConfigureAwait(false);
+            return;
         }
 
-        public Task DisconnectAsync()
+        int connectMs = (int)Math.Round(Stopwatch.GetElapsedTime(startTick).TotalMilliseconds);
+
+        await RunOnUiThreadAsync(() =>
         {
-            try { _tunnelCts?.Cancel(); } catch { }
-            try { _tunnelCts?.Dispose(); } catch { }
-            _tunnelCts = null;
+            LastHandshakeDuration = $"{connectMs} ms";
+            _connectedSinceUtc = DateTime.UtcNow;
+            SessionUptime = "00:00:00";
+            _uptimeTimer.Start();
+
+            ConnectionState = CyberConnectionState.Connected;
+            StateChanged?.Invoke(ConnectionState.Connected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+
+            ActiveEndpointDisplay = peerToPass ?? "TURBO ANYCAST MESH";
+            StatusHeadline = "MASQUE TUNNEL ACTIVE // ZERO LEAK";
+            StatusSubtext = $"Connected in {connectMs} ms • Mode: {ActiveRoutingBadge}";
+            AppendLog($"[LINK] MASQUE Tunnel fully armed in {connectMs} ms ({ActiveRoutingBadge}).");
+        });
+    }
+
+    public async Task DisconnectAsync()
+    {
+        await DisconnectInternalAsync().ConfigureAwait(false);
+    }
+
+    private async Task DisconnectInternalAsync()
+    {
+        try
+        {
+            _connectionCts?.Cancel();
+            await RunOnUiThreadAsync(() =>
+            {
+                _uptimeTimer.Stop();
+                StatusHeadline = "DISENGAGING MASQUE CORE...";
+            });
 
             _tunManager.StopTun();
             _proxyManager.DisableProxy();
-            _processService.Stop();
-
-            ResetTelemetry();
-            SetState(ConnectionState.Disconnected);
-            return Task.CompletedTask;
+            await _processService.StopAsync().ConfigureAwait(false);
         }
-
-        [RelayCommand]
-        private void ClearLogs()
+        finally
         {
-            DiagnosticLogs.Clear();
-        }
-
-        [RelayCommand]
-        private void CopyLogs()
-        {
-            if (DiagnosticLogs.Count == 0) return;
-            string joined = string.Join(Environment.NewLine, DiagnosticLogs);
-            Clipboard.SetText(joined);
-            AppendLog($"[{DateTime.Now:HH:mm:ss}] [SYS] Copied {DiagnosticLogs.Count} log lines to clipboard.");
-        }
-
-        private void ResetTelemetry()
-        {
-            Application.Current?.Dispatcher.InvokeAsync(() =>
+            await RunOnUiThreadAsync(() =>
             {
-                ExitIp = "—";
-                ExitRoute = "—";
-                ExitRtt = "—";
-                PingQualityColor = "#64748B";
+                ConnectionState = CyberConnectionState.Idle;
+                StateChanged?.Invoke(ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+                SessionUptime = "00:00:00";
+                StatusHeadline = "STANDBY // AETHER MASQUE READY";
+                StatusSubtext = SelectedNode is { IsAuto: false }
+                    ? $"Pinned to {SelectedNode.Name} (--peer {SelectedNode.Endpoint})"
+                    : "Select an Anycast Clean IP or engage Auto Turbo Mesh";
+                AppendLog("[LINK] Tunnel disconnected cleanly.");
             });
         }
+    }
 
-        private void SetState(ConnectionState newState)
+    private void OnTelemetryUpdated(ExitNodeTelemetry telemetry)
+    {
+        if (IsTunMode && !string.IsNullOrWhiteSpace(telemetry.IpAddress))
         {
-            Application.Current?.Dispatcher.InvokeAsync(() =>
+            _tunManager.AddBypassHostRoute(telemetry.IpAddress);
+        }
+
+        AppendLog($"[TELEMETRY] Exit Node: {telemetry.IpAddress} ({telemetry.Route}) | RTT: {telemetry.Rtt}");
+    }
+
+    private void OnActiveEndpointDetected(string endpoint)
+    {
+        RunOnUiThread(() =>
+        {
+            ActiveEndpointDisplay = endpoint;
+            OnPropertyChanged(nameof(PrimaryActionSubtext));
+        });
+    }
+
+    private void OnProcessTunnelStateChanged(bool isRunning)
+    {
+        RunOnUiThread(() =>
+        {
+            if (!isRunning && ConnectionState == CyberConnectionState.Connected)
             {
-                CurrentState = newState;
-                OnPropertyChanged(nameof(ConnectButtonSubText));
-                StateChanged?.Invoke(CurrentState, SelectedMode);
-            });
-        }
+                _uptimeTimer.Stop();
+                _tunManager.StopTun();
+                _proxyManager.DisableProxy();
+                ConnectionState = CyberConnectionState.Idle;
+                StateChanged?.Invoke(ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+                StatusHeadline = "STANDBY // LINK TERMINATED";
+                StatusSubtext = "Core process stopped. Ready to re-engage.";
+                AppendLog("[WARN] MASQUE backend closed unexpectedly.");
+            }
+        });
+    }
 
-        private void AppendLog(string line)
+    private void AppendLog(string message)
+    {
+        RunOnUiThread(() =>
         {
-            var dispatcher = Application.Current?.Dispatcher;
-            if (dispatcher is null || dispatcher.HasShutdownStarted)
-                return;
-
-            dispatcher.InvokeAsync(() =>
+            TelemetryLogs.Add(message);
+            while (TelemetryLogs.Count > MaxLogEntries)
             {
-                if (DiagnosticLogs.Count >= MaxLogEntries)
-                    DiagnosticLogs.RemoveAt(0);
+                TelemetryLogs.RemoveAt(0);
+            }
+        });
+    }
 
-                DiagnosticLogs.Add(line);
-            });
-        }
-
-        public void Dispose()
+    private static void RunOnUiThread(Action action)
+    {
+        if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.HasShutdownStarted)
         {
-            if (_disposed) return;
-            _disposed = true;
-
-            try { _tunnelCts?.Cancel(); } catch { }
-            _tunManager.Dispose();
-            _proxyManager.DisableProxy();
-            _processService.Dispose();
-            _jobManager.Dispose();
+            if (dispatcher.CheckAccess())
+                action();
+            else
+                dispatcher.InvokeAsync(action);
         }
+    }
+
+    private static Task RunOnUiThreadAsync(Action action)
+    {
+        if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.HasShutdownStarted)
+        {
+            if (dispatcher.CheckAccess())
+            {
+                action();
+                return Task.CompletedTask;
+            }
+            return dispatcher.InvokeAsync(action).Task;
+        }
+
+        action();
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        _uptimeTimer.Stop();
+        _pingCts?.Cancel();
+        _connectionCts?.Cancel();
+
+        _tunManager.Dispose();
+        _proxyManager.DisableProxy();
+        _processService.Dispose();
+        _jobManager.Dispose();
     }
 }

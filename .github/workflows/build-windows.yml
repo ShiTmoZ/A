@@ -5,7 +5,6 @@ on:
     branches: [ "main" ]
     paths-ignore:
       - 'README.md'
-      - 'assets/**'
       - 'docs/**'
     tags: [ "v*" ]
   workflow_dispatch:
@@ -56,6 +55,14 @@ jobs:
               Copy-Item "AetherClient\aether-masque.toml" ".\publish\aether-masque.toml" -Force
           }
 
+          if (Test-Path "AetherClient\clean_ips.txt") {
+              Copy-Item "AetherClient\clean_ips.txt" ".\publish\clean_ips.txt" -Force
+          }
+
+          if (Test-Path "AetherClient\assets") {
+              Copy-Item "AetherClient\assets" ".\publish\assets" -Recurse -Force
+          }
+
           Get-ChildItem -Path ".\publish"
 
       - name: Package Release ZIP
@@ -76,15 +83,16 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           name: Cloudflare WARP (MASQUE Edition) ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           body: |
-            ### Aether Client for Windows (x64)
-            Zero-bloat, production-grade desktop client for Cloudflare MASQUE (RFC 9298) HTTP/2 censorship bypass.
+            ### Cloudflare WARP (MASQUE Edition) - Neo-Tokyo Cyber-Glass Release
+            Zero-bloat, production-grade desktop client for Cloudflare MASQUE (RFC 9298) HTTP/2 censorship bypass on DPI-restricted networks (TCI / MCI / Irancell).
 
-            #### Features:
-            - **C# .NET 8 WPF**: Modern fluent dark interface with real-time telemetry and state badge.
-            - **Kernel Job Objects**: Zero-orphan process lifecycle (automatically cleans up `aether.exe` and `tun2socks.exe`).
-            - **Mode A (System Proxy)**: WinINET API toggle for browsers and download managers.
-            - **Mode B (True TUN)**: `wintun.dll` + `tun2socks.exe` virtual adapter routing `0.0.0.0/0` into `127.0.0.1:1819` with anti-loop physical gateway bypass.
-            - **Pre-provisioned Identity**: Bundled `aether-masque.toml` for instant connection without censorship blocks on initial registration.
+            #### What's New:
+            - **Neo-Tokyo Cyber-Glass UI**: Framed anime companion HUD with reactive status rings (Idle Cyan breathing, Hunting Amber radar rotation, Connected Emerald shield + live micro-equalizer audio bars).
+            - **Embedded Anycast Clean IP Radar**: Parallel TCP SYN-ACK handshake engine (sub-1200ms timeout) across 15+ curated Cloudflare edges with color-coded latency tiers (<180ms Emerald, 180-280ms Amber, >280ms Crimson).
+            - **Sub-400ms Direct Peer Lock**: Instant connection bypass via `--peer <IP:PORT>` eliminating the 45-second scan phase.
+            - **Custom IP Pool Integration**: Drop custom endpoints into `clean_ips.txt` next to the executable for instant auto-loading.
+            - **Anti-DNS Poisoning True TUN**: Automatic DNS clamp to `1.1.1.1` via `netsh` preventing `10.10.34.34` censorship spoofing.
+            - **Kernel Job Objects**: Zero-orphan process tree lifecycle guarantee.
           files: .\AetherClient-Windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

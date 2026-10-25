@@ -1,0 +1,30 @@
+# ==============================================================================
+# Cloudflare Anycast Clean IP Pool for AetherClient
+# ==============================================================================
+# You can add custom endpoints below. Each endpoint will be automatically
+# loaded into the Anycast Clean IP Radar on application startup.
+#
+# Supported Formats:
+#   IP:PORT
+#   IP (defaults to port 443)
+#   IP:PORT|Custom Display Name|Region Code (e.g. 162.159.198.4:443|Frankfurt Alpha|DE)
+# ==============================================================================
+
+# Frankfurt Anycast Clean Edges (DE)
+162.159.198.4:443|Frankfurt Alpha|DE
+162.159.198.65:443|Frankfurt Bravo|DE
+162.159.198.72:443|Frankfurt Core|DE
+188.114.96.3:443|Frankfurt Mesh I|DE
+
+# Amsterdam Anycast Clean Edges (NL)
+162.159.198.198:443|Amsterdam Direct|NL
+162.159.198.245:443|Amsterdam Edge|NL
+188.114.97.3:443|Amsterdam Mesh II|NL
+
+# Stockholm & London Clean Edges (SE / UK)
+162.159.192.1:443|Stockholm Edge|SE
+162.159.192.10:443|Stockholm North|SE
+188.114.98.2:443|Stockholm Mesh III|SE
+162.159.193.5:443|London Docklands|UK
+162.159.195.2:443|London Prime|UK
+188.114.99.1:443|London Mesh IV|UK
