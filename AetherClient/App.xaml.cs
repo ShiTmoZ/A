@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Windows;
 using Microsoft.Win32;
@@ -20,39 +21,94 @@ namespace AetherClient
         {
             base.OnStartup(e);
 
-            _singleInstanceMutex = new Mutex(true, "Global\\AetherDesktopClient_SingleInstance_Mutex", out bool createdNew);
-            if (!createdNew)
+            try
             {
-                MessageBox.Show(
-                    "Aether Client is already running in the system tray.",
-                    "Aether Client",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-                Shutdown();
-                return;
+                // Mutex for single instance check with safe fallback
+                bool createdNew = true;
+                try
+                {
+                    _singleInstanceMutex = new Mutex(true, "Local\\AetherDesktopClient_SingleInstance_Mutex", out createdNew);
+                }
+                catch
+                {
+                    // Fall back if Mutex fails
+                    createdNew = true;
+                }
+
+                if (!createdNew)
+                {
+                    MessageBox.Show(
+                        "Aether Client is already running in the system tray.",
+                        "Aether Client",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    Shutdown();
+                    return;
+                }
+
+                // Register global crash / logoff hooks with crash file logging
+                AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+                {
+                    LogFatalException(args.ExceptionObject as Exception);
+                    EmergencyTeardown();
+                };
+
+                DispatcherUnhandledException += (_, args) =>
+                {
+                    LogFatalException(args.Exception);
+                    EmergencyTeardown();
+                    MessageBox.Show(
+                        $"Aether encountered an unhandled exception:\n\n{args.Exception?.Message}\n\nDetails saved to crash.log",
+                        "Aether Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    args.Handled = true;
+                    Shutdown(1);
+                };
+
+                SystemEvents.SessionEnding += (_, _) => EmergencyTeardown();
+
+                _viewModel = new MainViewModel();
+                _mainWindow = new MainWindow(_viewModel, OnMinimizedToTray);
+
+                try
+                {
+                    _trayService = new TrayIconService(
+                        showWindowAction: RestoreMainWindow,
+                        toggleConnectionAction: () => _ = _viewModel.ToggleConnectionAsync(),
+                        exitApplicationAction: PerformCleanExit);
+
+                    _viewModel.StateChanged += (state, mode) => _trayService.UpdateState(state, mode);
+                }
+                catch (Exception trayEx)
+                {
+                    LogFatalException(trayEx);
+                }
+
+                _mainWindow.Show();
             }
-
-            // Register global crash / logoff hooks to guarantee routing table & proxy restoration
-            AppDomain.CurrentDomain.UnhandledException += (_, _) => EmergencyTeardown();
-            DispatcherUnhandledException += (_, args) =>
+            catch (Exception ex)
             {
-                EmergencyTeardown();
-                args.Handled = true;
+                LogFatalException(ex);
+                MessageBox.Show(
+                    $"Fatal error on startup:\n\n{ex.Message}\n\n{ex.StackTrace}",
+                    "Aether Fatal Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
                 Shutdown(1);
-            };
-            SystemEvents.SessionEnding += (_, _) => EmergencyTeardown();
+            }
+        }
 
-            _viewModel = new MainViewModel();
-            _mainWindow = new MainWindow(_viewModel, OnMinimizedToTray);
-
-            _trayService = new TrayIconService(
-                showWindowAction: RestoreMainWindow,
-                toggleConnectionAction: () => _ = _viewModel.ToggleConnectionAsync(),
-                exitApplicationAction: PerformCleanExit);
-
-            _viewModel.StateChanged += (state, mode) => _trayService.UpdateState(state, mode);
-
-            _mainWindow.Show();
+        private static void LogFatalException(Exception? ex)
+        {
+            if (ex is null) return;
+            try
+            {
+                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "crash.log");
+                string logContent = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss UTC}] FATAL EXCEPTION:\n{ex}\n\n";
+                File.AppendAllText(logPath, logContent);
+            }
+            catch { }
         }
 
         private void OnMinimizedToTray()

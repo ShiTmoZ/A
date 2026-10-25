@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using AetherClient.ViewModels;
@@ -12,10 +13,6 @@ namespace AetherClient.Views;
 public partial class MainWindow : Window
 {
     private readonly Action? _onHideToTray;
-    private Storyboard? _idleBreathingStoryboard;
-    private Storyboard? _huntingRadarStoryboard;
-    private Storyboard? _connectedEqualizerStoryboard;
-
     public bool AllowClose { get; set; }
 
     public MainWindow() : this(new MainViewModel(), null)
@@ -28,11 +25,15 @@ public partial class MainWindow : Window
         DataContext = viewModel;
         _onHideToTray = onHideToTray;
 
+        SafeSetWindowIcon();
         LoadCompanionAvatar();
-        InitializeAvatarStoryboards();
 
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        ApplyAvatarVisualState(viewModel.ConnectionState);
+
+        Loaded += (_, _) =>
+        {
+            ApplyAvatarVisualState(viewModel.ConnectionState);
+        };
 
         Closed += (_, _) =>
         {
@@ -41,6 +42,26 @@ public partial class MainWindow : Window
                 disposable.Dispose();
             }
         };
+    }
+
+    private void SafeSetWindowIcon()
+    {
+        try
+        {
+            string diskIconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.ico");
+            if (File.Exists(diskIconPath))
+            {
+                Icon = BitmapFrame.Create(new Uri(diskIconPath, UriKind.Absolute));
+                return;
+            }
+
+            var packUri = new Uri("pack://application:,,,/app.ico", UriKind.Absolute);
+            Icon = BitmapFrame.Create(packUri);
+        }
+        catch
+        {
+            // Ignore icon failure to allow window to open regardless
+        }
     }
 
     private void LoadCompanionAvatar()
@@ -76,99 +97,100 @@ public partial class MainWindow : Window
         }
     }
 
-    private void InitializeAvatarStoryboards()
-    {
-        // 1. IDLE: Ambient Cyan Breathing Animation
-        _idleBreathingStoryboard = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
-        var breatheOpacity = new DoubleAnimation
-        {
-            From = 0.45,
-            To = 1.0,
-            Duration = TimeSpan.FromSeconds(1.8),
-            AutoReverse = true,
-            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
-        };
-        Storyboard.SetTarget(breatheOpacity, IdleCyanRing);
-        Storyboard.SetTargetProperty(breatheOpacity, new PropertyPath(OpacityProperty));
-        _idleBreathingStoryboard.Children.Add(breatheOpacity);
-
-        // 2. HUNTING: 360-Degree Rotating Amber Radar Sweep
-        _huntingRadarStoryboard = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
-        var radarSpin = new DoubleAnimation
-        {
-            From = 0,
-            To = 360,
-            Duration = TimeSpan.FromSeconds(2.2)
-        };
-        Storyboard.SetTarget(radarSpin, RadarRingRotateTransform);
-        Storyboard.SetTargetProperty(radarSpin, new PropertyPath(System.Windows.Media.RotateTransform.AngleProperty));
-        _huntingRadarStoryboard.Children.Add(radarSpin);
-
-        // 3. CONNECTED: Micro-Equalizer Traffic Bars Animation
-        _connectedEqualizerStoryboard = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
-        AddEqualizerBarAnimation(_connectedEqualizerStoryboard, EqBar1, 4, 13, 320);
-        AddEqualizerBarAnimation(_connectedEqualizerStoryboard, EqBar2, 12, 4, 260);
-        AddEqualizerBarAnimation(_connectedEqualizerStoryboard, EqBar3, 5, 14, 380);
-        AddEqualizerBarAnimation(_connectedEqualizerStoryboard, EqBar4, 13, 5, 290);
-    }
-
-    private static void AddEqualizerBarAnimation(
-        Storyboard sb,
-        FrameworkElement targetBar,
-        double fromHeight,
-        double toHeight,
-        int durationMs)
-    {
-        var anim = new DoubleAnimation
-        {
-            From = fromHeight,
-            To = toHeight,
-            Duration = TimeSpan.FromMilliseconds(durationMs),
-            AutoReverse = true,
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
-        };
-        Storyboard.SetTarget(anim, targetBar);
-        Storyboard.SetTargetProperty(anim, new PropertyPath(HeightProperty));
-        sb.Children.Add(anim);
-    }
-
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(MainViewModel.ConnectionState) && sender is MainViewModel vm)
         {
-            ApplyAvatarVisualState(vm.ConnectionState);
+            Dispatcher.Invoke(() => ApplyAvatarVisualState(vm.ConnectionState));
         }
+    }
+
+    private void StopAllAnimations()
+    {
+        try
+        {
+            IdleCyanRing.BeginAnimation(OpacityProperty, null);
+            RadarRingRotateTransform.BeginAnimation(RotateTransform.AngleProperty, null);
+            EqBar1.BeginAnimation(HeightProperty, null);
+            EqBar2.BeginAnimation(HeightProperty, null);
+            EqBar3.BeginAnimation(HeightProperty, null);
+            EqBar4.BeginAnimation(HeightProperty, null);
+        }
+        catch { }
     }
 
     private void ApplyAvatarVisualState(CyberConnectionState state)
     {
-        _idleBreathingStoryboard?.Stop();
-        _huntingRadarStoryboard?.Stop();
-        _connectedEqualizerStoryboard?.Stop();
-
-        IdleCyanRing.Visibility = Visibility.Collapsed;
-        HuntingAmberRadarRing.Visibility = Visibility.Collapsed;
-        ConnectedEmeraldRing.Visibility = Visibility.Collapsed;
-        ConnectedEqualizerBadge.Visibility = Visibility.Collapsed;
-
-        switch (state)
+        try
         {
-            case CyberConnectionState.Idle:
-                IdleCyanRing.Visibility = Visibility.Visible;
-                _idleBreathingStoryboard?.Begin();
-                break;
+            StopAllAnimations();
 
-            case CyberConnectionState.Hunting:
-                HuntingAmberRadarRing.Visibility = Visibility.Visible;
-                _huntingRadarStoryboard?.Begin();
-                break;
+            IdleCyanRing.Visibility = Visibility.Collapsed;
+            HuntingAmberRadarRing.Visibility = Visibility.Collapsed;
+            ConnectedEmeraldRing.Visibility = Visibility.Collapsed;
+            ConnectedEqualizerBadge.Visibility = Visibility.Collapsed;
 
-            case CyberConnectionState.Connected:
-                ConnectedEmeraldRing.Visibility = Visibility.Visible;
-                ConnectedEqualizerBadge.Visibility = Visibility.Visible;
-                _connectedEqualizerStoryboard?.Begin();
-                break;
+            switch (state)
+            {
+                case CyberConnectionState.Idle:
+                    IdleCyanRing.Visibility = Visibility.Visible;
+                    var breatheAnim = new DoubleAnimation
+                    {
+                        From = 0.45,
+                        To = 1.0,
+                        Duration = TimeSpan.FromSeconds(1.8),
+                        AutoReverse = true,
+                        RepeatBehavior = RepeatBehavior.Forever,
+                        EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                    };
+                    IdleCyanRing.BeginAnimation(OpacityProperty, breatheAnim);
+                    break;
+
+                case CyberConnectionState.Hunting:
+                    HuntingAmberRadarRing.Visibility = Visibility.Visible;
+                    var radarSpin = new DoubleAnimation
+                    {
+                        From = 0,
+                        To = 360,
+                        Duration = TimeSpan.FromSeconds(2.2),
+                        RepeatBehavior = RepeatBehavior.Forever
+                    };
+                    RadarRingRotateTransform.BeginAnimation(RotateTransform.AngleProperty, radarSpin);
+                    break;
+
+                case CyberConnectionState.Connected:
+                    ConnectedEmeraldRing.Visibility = Visibility.Visible;
+                    ConnectedEqualizerBadge.Visibility = Visibility.Visible;
+
+                    AnimateBar(EqBar1, 4, 13, 320);
+                    AnimateBar(EqBar2, 12, 4, 260);
+                    AnimateBar(EqBar3, 5, 14, 380);
+                    AnimateBar(EqBar4, 13, 5, 290);
+                    break;
+            }
         }
+        catch
+        {
+            // Animation failure must never crash the UI
+        }
+    }
+
+    private static void AnimateBar(FrameworkElement bar, double from, double to, int durationMs)
+    {
+        try
+        {
+            var anim = new DoubleAnimation
+            {
+                From = from,
+                To = to,
+                Duration = TimeSpan.FromMilliseconds(durationMs),
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+            };
+            bar.BeginAnimation(HeightProperty, anim);
+        }
+        catch { }
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

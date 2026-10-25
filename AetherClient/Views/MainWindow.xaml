@@ -7,7 +7,6 @@
         xmlns:models="clr-namespace:AetherClient.Models"
         mc:Ignorable="d"
         Title="AETHER // MASQUE CYBER-GLASS CLIENT"
-        Icon="app.ico"
         Width="480"
         Height="820"
         MinWidth="450"
@@ -16,11 +15,8 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
-        ResizeMode="CanResizeWithGrip">
-
-    <Window.DataContext>
-        <vm:MainViewModel />
-    </Window.DataContext>
+        ResizeMode="CanResizeWithGrip"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel, IsDesignTimeCreatable=False}">
 
     <Window.Resources>
         <!-- ==================== NEO-TOKYO COLOR PALETTE ==================== -->

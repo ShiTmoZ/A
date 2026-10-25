@@ -59,6 +59,10 @@ jobs:
               Copy-Item "AetherClient\clean_ips.txt" ".\publish\clean_ips.txt" -Force
           }
 
+          if (Test-Path "AetherClient\app.ico") {
+              Copy-Item "AetherClient\app.ico" ".\publish\app.ico" -Force
+          }
+
           if (Test-Path "AetherClient\assets") {
               Copy-Item "AetherClient\assets" ".\publish\assets" -Recurse -Force
           }
