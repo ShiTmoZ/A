@@ -257,8 +257,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _pingCts?.Cancel();
             _pingCts = new CancellationTokenSource();
 
-            RadarSummaryText = "Sweeping Anycast TCP Edges...";
-            AppendLog("[RADAR] Initiating parallel TCP handshake sweep across Cloudflare Anycast pool (1200ms timeout)...");
+            RadarSummaryText = "Testing Real L7 TLS 1.3 Connectability...";
+            AppendLog("[RADAR] Initiating authentic L7 TLS 1.3 handshake probe across Cloudflare Anycast pool...");
 
             string? currentSelectedEndpoint = SelectedNode?.Endpoint;
             var sortedNodes = await _pingService.PingAllNodesAsync(EdgeNodes, _pingCts.Token).ConfigureAwait(true);

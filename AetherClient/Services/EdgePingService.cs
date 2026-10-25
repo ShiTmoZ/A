@@ -181,40 +181,42 @@ public sealed class EdgePingService
     /// <summary>
     /// Probes all nodes in the pool using real L7 TLS 1.3 connectability tests.
     /// Only nodes passing the TLS handshake through DPI are marked optimal.
+    /// Returns the sorted list with the lowest-latency nodes first.
     /// </summary>
-    public async Task PingAllNodesAsync(
+    public async Task<List<EdgeNodeModel>> PingAllNodesAsync(
         IEnumerable<EdgeNodeModel> nodes,
-        Action<EdgeNodeModel>? onNodeTested = null,
         CancellationToken cancellationToken = default)
     {
-        var nodeArray = nodes.Where(n => !n.IsAuto).ToArray();
-        var autoNode = nodes.FirstOrDefault(n => n.IsAuto);
+        List<EdgeNodeModel> snapshot = nodes.ToList();
+        EdgeNodeModel? autoNode = snapshot.FirstOrDefault(n => n.IsAuto);
+        List<EdgeNodeModel> targetNodes = snapshot.Where(n => !n.IsAuto).ToList();
 
-        foreach (var node in nodeArray)
+        await RunOnUiThreadAsync(() =>
         {
-            node.IsProbing = true;
-        }
+            if (autoNode is not null)
+                autoNode.IsProbing = true;
 
-        using var throttler = new SemaphoreSlim(MaxConcurrentPings, MaxConcurrentPings);
-        var tasks = nodeArray.Select(async node =>
+            foreach (EdgeNodeModel node in targetNodes)
+            {
+                node.IsProbing = true;
+            }
+        });
+
+        using var throttler = new SemaphoreSlim(MaxConcurrentPings);
+
+        IEnumerable<Task> probeTasks = targetNodes.Select(async node =>
         {
             await throttler.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                if (cancellationToken.IsCancellationRequested)
-                    return;
+                int rtt = await MeasureTlsConnectabilityAsync(node.Endpoint, DefaultTimeoutMs, cancellationToken)
+                    .ConfigureAwait(false);
 
-                int latency = await MeasureTlsConnectabilityAsync(
-                    node.Endpoint,
-                    DefaultTimeoutMs,
-                    cancellationToken).ConfigureAwait(false);
-
-                Application.Current?.Dispatcher?.Invoke(() =>
+                await RunOnUiThreadAsync(() =>
                 {
-                    node.LatencyMs = latency;
+                    node.LatencyMs = rtt;
                     node.HasBeenTested = true;
                     node.IsProbing = false;
-                    onNodeTested?.Invoke(node);
                 });
             }
             finally
@@ -223,20 +225,37 @@ public sealed class EdgePingService
             }
         });
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        await Task.WhenAll(probeTasks).ConfigureAwait(false);
 
-        // Update Auto node to best measured latency
-        if (autoNode != null)
+        List<EdgeNodeModel> sortedReachable = targetNodes
+            .Where(n => n.LatencyMs > 0)
+            .OrderBy(n => n.LatencyMs)
+            .ThenBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        List<EdgeNodeModel> unreachable = targetNodes
+            .Where(n => n.LatencyMs <= 0)
+            .OrderBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        await RunOnUiThreadAsync(() =>
         {
-            var bestTested = nodeArray.Where(n => n.HasBeenTested && n.LatencyMs > 0).ToList();
-            Application.Current?.Dispatcher?.Invoke(() =>
+            if (autoNode is not null)
             {
-                autoNode.LatencyMs = bestTested.Count > 0 ? bestTested.Min(n => n.LatencyMs) : -1;
+                autoNode.LatencyMs = sortedReachable.Count > 0 ? sortedReachable[0].LatencyMs : -1;
                 autoNode.HasBeenTested = true;
                 autoNode.IsProbing = false;
-                onNodeTested?.Invoke(autoNode);
-            });
-        }
+            }
+        });
+
+        var finalOrdered = new List<EdgeNodeModel>(snapshot.Count);
+        if (autoNode is not null)
+            finalOrdered.Add(autoNode);
+
+        finalOrdered.AddRange(sortedReachable);
+        finalOrdered.AddRange(unreachable);
+
+        return finalOrdered;
     }
 
     /// <summary>
@@ -251,5 +270,21 @@ public sealed class EdgePingService
             .ToList();
 
         return testedCandidates.FirstOrDefault() ?? nodes.FirstOrDefault(n => n.IsAuto);
+    }
+
+    private static Task RunOnUiThreadAsync(Action action)
+    {
+        if (Application.Current?.Dispatcher is { } dispatcher)
+        {
+            if (dispatcher.CheckAccess())
+            {
+                action();
+                return Task.CompletedTask;
+            }
+            return dispatcher.InvokeAsync(action).Task;
+        }
+
+        action();
+        return Task.CompletedTask;
     }
 }
