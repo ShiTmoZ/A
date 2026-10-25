@@ -34,6 +34,7 @@
         <SolidColorBrush x:Key="ObsidianCanvasBrush" Color="{StaticResource ObsidianCanvasColor}" />
         <SolidColorBrush x:Key="GlassSurfaceBrush" Color="{StaticResource GlassSurfaceColor}" />
         <SolidColorBrush x:Key="GlassElevatedBrush" Color="{StaticResource GlassElevatedColor}" />
+        <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource GlassElevatedColor}" />
         <SolidColorBrush x:Key="SlateBorderBrush" Color="{StaticResource SlateBorderColor}" />
         <SolidColorBrush x:Key="CrimsonAccentBrush" Color="{StaticResource CrimsonAccentColor}" />
         <SolidColorBrush x:Key="CrimsonSoftBrush" Color="{StaticResource CrimsonSoftColor}" />
@@ -579,7 +580,7 @@
                                                     CornerRadius="4"
                                                     Padding="6,2"
                                                     VerticalAlignment="Center"
-                                                    Background="{StaticResource SurfaceElevatedBrush}"
+                                                    Background="{StaticResource GlassElevatedBrush}"
                                                     BorderBrush="{StaticResource SlateBorderBrush}"
                                                     BorderThickness="1">
                                                 <TextBlock Text="{Binding ExitLocationBadge}"
