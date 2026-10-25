@@ -1,0 +1,86 @@
+name: Build & Release Windows Client
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Windows x64 Native Binary
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore NuGet Packages
+        run: dotnet restore AetherClient.sln
+
+      - name: Publish Single-File Executable
+        run: |
+          dotnet publish AetherClient\AetherClient.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o .\publish
+
+      - name: Download & Bundle External Network Engines
+        shell: pwsh
+        run: |
+          Write-Host "[*] Downloading Aether Core v2.4.0..."
+          Invoke-WebRequest -Uri "https://github.com/CluvexStudio/Aether/releases/download/v2.4.0/aether-windows-x86_64.zip" -OutFile "aether.zip"
+          Expand-Archive -Path "aether.zip" -DestinationPath "aether_out" -Force
+          Copy-Item "aether_out\aether.exe" ".\publish\aether.exe" -Force
+
+          Write-Host "[*] Downloading Wintun Driver v0.14.1..."
+          Invoke-WebRequest -Uri "https://www.wintun.net/builds/wintun-0.14.1.zip" -OutFile "wintun.zip"
+          Expand-Archive -Path "wintun.zip" -DestinationPath "wintun_out" -Force
+          Copy-Item "wintun_out\wintun\bin\amd64\wintun.dll" ".\publish\wintun.dll" -Force
+
+          Write-Host "[*] Downloading Tun2Socks Core..."
+          Invoke-WebRequest -Uri "https://github.com/xjasonlyu/tun2socks/releases/latest/download/tun2socks-windows-amd64.zip" -OutFile "tun2socks.zip"
+          Expand-Archive -Path "tun2socks.zip" -DestinationPath "tun2socks_out" -Force
+          Copy-Item "tun2socks_out\tun2socks-windows-amd64.exe" ".\publish\tun2socks.exe" -Force
+
+          if (Test-Path "AetherClient\aether-masque.toml") {
+              Copy-Item "AetherClient\aether-masque.toml" ".\publish\aether-masque.toml" -Force
+          }
+
+          Get-ChildItem -Path ".\publish"
+
+      - name: Package Release ZIP
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ".\publish\*" -DestinationPath ".\AetherClient-Windows-x64.zip" -Force
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AetherClient-Windows-x64
+          path: .\AetherClient-Windows-x64.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          name: AetherClient ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          body: |
+            ### Aether Client for Windows (x64)
+            Zero-bloat, production-grade desktop client for Cloudflare MASQUE (RFC 9298) HTTP/2 censorship bypass.
+
+            #### Features:
+            - **C# .NET 8 WPF**: Modern fluent dark interface with real-time telemetry and state badge.
+            - **Kernel Job Objects**: Zero-orphan process lifecycle (automatically cleans up `aether.exe` and `tun2socks.exe`).
+            - **Mode A (System Proxy)**: WinINET API toggle for browsers and download managers.
+            - **Mode B (True TUN)**: `wintun.dll` + `tun2socks.exe` virtual adapter routing `0.0.0.0/0` into `127.0.0.1:1819` with anti-loop physical gateway bypass.
+            - **Pre-provisioned Identity**: Bundled `aether-masque.toml` for instant connection without censorship blocks on initial registration.
+          files: .\AetherClient-Windows-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
