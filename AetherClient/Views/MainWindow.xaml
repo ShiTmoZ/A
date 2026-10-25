@@ -207,8 +207,7 @@
                         <TextBlock Text="AETHER"
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    FontWeight="Black"
-                                   FontSize="12"
-                                   CharacterSpacing="150" />
+                                   FontSize="12" />
                         <TextBlock Text=" // WARP MASQUE CORE v2.4"
                                    Foreground="{StaticResource CrimsonSoftBrush}"
                                    FontWeight="SemiBold"
