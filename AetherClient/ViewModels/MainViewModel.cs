@@ -1,535 +1,521 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 using AetherClient.Core;
 using AetherClient.Models;
 using AetherClient.Network;
-using AetherClient.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace AetherClient.ViewModels;
-
-public enum CyberConnectionState
+namespace AetherClient.ViewModels
 {
-    Idle,
-    Hunting,
-    Connected
-}
-
-public sealed partial class MainViewModel : ObservableObject, IDisposable
-{
-    private const int MaxLogEntries = 300;
-
-    private readonly EdgePingService _pingService;
-    private readonly JobObjectManager _jobManager;
-    private readonly AetherProcessService _processService;
-    private readonly WinInetProxyManager _proxyManager;
-    private readonly TunEngineManager _tunManager;
-    private readonly DispatcherTimer _uptimeTimer;
-
-    private CancellationTokenSource? _connectionCts;
-    private CancellationTokenSource? _pingCts;
-    private DateTime _connectedSinceUtc;
-    private bool _disposed;
-
-    public ObservableCollection<EdgeNodeModel> EdgeNodes { get; } = new();
-    public ObservableCollection<string> TelemetryLogs { get; } = new();
-
-    public event Action<ConnectionState, TunnelMode>? StateChanged;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsIdle))]
-    [NotifyPropertyChangedFor(nameof(IsHunting))]
-    [NotifyPropertyChangedFor(nameof(IsConnected))]
-    [NotifyPropertyChangedFor(nameof(PrimaryActionText))]
-    [NotifyPropertyChangedFor(nameof(PrimaryActionSubtext))]
-    private CyberConnectionState _connectionState = CyberConnectionState.Idle;
-
-    [ObservableProperty]
-    private EdgeNodeModel? _selectedNode;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSystemProxyMode))]
-    [NotifyPropertyChangedFor(nameof(ActiveRoutingBadge))]
-    private bool _isTunMode = true;
-
-    [ObservableProperty]
-    private bool _isPingingRadar;
-
-    [ObservableProperty]
-    private string _statusHeadline = "STANDBY // AETHER MASQUE READY";
-
-    [ObservableProperty]
-    private string _statusSubtext = "Select an Anycast Clean IP or engage Auto Turbo Mesh";
-
-    [ObservableProperty]
-    private string _activeEndpointDisplay = "AUTO TURBO MESH";
-
-    [ObservableProperty]
-    private string _sessionUptime = "00:00:00";
-
-    [ObservableProperty]
-    private string _radarSummaryText = "Embedded Anycast Radar Armed";
-
-    [ObservableProperty]
-    private string _lastHandshakeDuration = "-- ms";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ExitLocationBadge))]
-    private bool _isForeignExitMode = false;
-
-    public string ExitLocationBadge => IsForeignExitMode ? "EUROPEAN EXIT (MIM)" : "DIRECT MASQUE";
-
-    public bool IsIdle => ConnectionState == CyberConnectionState.Idle;
-    public bool IsHunting => ConnectionState == CyberConnectionState.Hunting;
-    public bool IsConnected => ConnectionState == CyberConnectionState.Connected;
-    public bool IsSystemProxyMode => !IsTunMode;
-
-    public string ActiveRoutingBadge => IsTunMode ? "WINTUN L3 KERNEL TUN" : "WININET SYSTEM PROXY";
-
-    public string PrimaryActionText => ConnectionState switch
+    public enum TunnelConnectionState
     {
-        CyberConnectionState.Idle => "ENGAGE MASQUE LINK",
-        CyberConnectionState.Hunting => "LOCKING CLEAN IP...",
-        CyberConnectionState.Connected => "TERMINATE LINK",
-        _ => "ENGAGE MASQUE LINK"
-    };
+        Idle,
+        Hunting,
+        Connected
+    }
 
-    public string PrimaryActionSubtext => ConnectionState switch
+    public sealed class TelemetryLogEntry
     {
-        CyberConnectionState.Idle => SelectedNode is { IsAuto: false }
-            ? $"DIRECT PEER LOCK // {SelectedNode.Endpoint}"
-            : "TURBO ANYCAST MESH // HTTP/2 RFC 9298",
-        CyberConnectionState.Hunting => "ESTABLISHING ZERO-LEAK TLS 1.3 MASQUE STREAM",
-        CyberConnectionState.Connected => $"PROTECTED VIA {ActiveEndpointDisplay} // {SessionUptime}",
-        _ => string.Empty
-    };
+        public string Timestamp { get; init; } = string.Empty;
+        public string Tag { get; init; } = "[INFO]";
+        public string Message { get; init; } = string.Empty;
+        public Brush TagBrush { get; init; } = Brushes.Cyan;
+        public Brush MessageBrush { get; init; } = Brushes.WhiteSmoke;
+    }
 
-    public MainViewModel()
+    public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
-        // Sanitize any orphaned OS state from prior unexpected exits
-        AetherProcessService.KillOrphanedProcesses();
-        WinInetProxyManager.SanitizeOrphanedProxySettings();
-        TunEngineManager.CleanupOrphanedTunState();
+        private const int MaxLogEntries = 600;
 
-        _jobManager = new JobObjectManager();
-        _pingService = new EdgePingService();
-        _processService = new AetherProcessService(_jobManager);
-        _proxyManager = new WinInetProxyManager(AppendLog);
-        _tunManager = new TunEngineManager(_jobManager, AppendLog);
+        // Frozen Brushes for High-Performance UI rendering
+        private static readonly Brush TealTagBrush = CreateFrozenBrush("#22B8CF");
+        private static readonly Brush GoldTagBrush = CreateFrozenBrush("#FFD166");
+        private static readonly Brush EmeraldTagBrush = CreateFrozenBrush("#4ADE80");
+        private static readonly Brush CrimsonTagBrush = CreateFrozenBrush("#FF5C6A");
+        private static readonly Brush CyanTagBrush = CreateFrozenBrush("#38BDF8");
+        private static readonly Brush PrimaryTextBrush = CreateFrozenBrush("#F1F5F9");
+        private static readonly Brush SecondaryTextBrush = CreateFrozenBrush("#CBD5E1");
 
-        _processService.LogReceived += AppendLog;
-        _processService.TunnelStateChanged += OnProcessTunnelStateChanged;
-        _processService.ActiveEndpointDetected += OnActiveEndpointDetected;
-        _processService.TelemetryUpdated += OnTelemetryUpdated;
+        private readonly JobObjectManager _jobManager;
+        private readonly AetherProcessService _processService;
+        private readonly WinInetProxyManager _proxyManager;
+        private readonly TunEngineManager _tunManager;
+        private readonly DispatcherTimer _uptimeTimer;
 
-        _uptimeTimer = new DispatcherTimer(DispatcherPriority.Background)
+        private CancellationTokenSource? _connectionCts;
+        private DateTime _connectedSinceUtc;
+        private string? _detectedPeerIp;
+        private bool _isDisposed;
+
+        public ObservableCollection<TelemetryLogEntry> Logs { get; } = new();
+
+        public event Action<ConnectionState, TunnelMode>? StateChanged;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsIdle))]
+        [NotifyPropertyChangedFor(nameof(IsHunting))]
+        [NotifyPropertyChangedFor(nameof(IsConnected))]
+        [NotifyPropertyChangedFor(nameof(StatusBadgeText))]
+        [NotifyPropertyChangedFor(nameof(PrimaryActionButtonText))]
+        [NotifyPropertyChangedFor(nameof(CompanionStatusTitle))]
+        [NotifyPropertyChangedFor(nameof(CompanionAuraDescription))]
+        private TunnelConnectionState _currentState = TunnelConnectionState.Idle;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsSystemProxySelected))]
+        [NotifyPropertyChangedFor(nameof(ActiveRoutingDescription))]
+        private bool _isTunModeSelected = true;
+
+        [ObservableProperty]
+        private string _companionSubtitle = "ELVEN MANA & HEARTH // MASQUE EDITION";
+
+        [ObservableProperty]
+        private string _gatewayPeer = "162.159.198.4:443";
+
+        [ObservableProperty]
+        private string _routeDatacenter = "FRA (Frankfurt Core)";
+
+        [ObservableProperty]
+        private string _latencyRtt = "175 ms";
+
+        [ObservableProperty]
+        private string _localListeners = "127.0.0.1:1819 (SOCKS5) | :1820 (HTTP)";
+
+        [ObservableProperty]
+        private string _lastExecutedCommand = "aether.exe --masque --h2 -4 --turbo --quick-reconnect --http-proxy 127.0.0.1:1820";
+
+        [ObservableProperty]
+        private string _logCountBadgeText = "0 events";
+
+        [ObservableProperty]
+        private string _copyButtonText = "Copy Logs";
+
+        [ObservableProperty]
+        private bool _isCopyFeedbackActive;
+
+        public bool IsIdle => CurrentState == TunnelConnectionState.Idle;
+        public bool IsHunting => CurrentState == TunnelConnectionState.Hunting;
+        public bool IsConnected => CurrentState == TunnelConnectionState.Connected;
+
+        public bool IsSystemProxySelected
         {
-            Interval = TimeSpan.FromSeconds(1)
-        };
-        _uptimeTimer.Tick += (_, _) =>
+            get => !IsTunModeSelected;
+            set => IsTunModeSelected = !value;
+        }
+
+        public string ActiveRoutingDescription => IsTunModeSelected
+            ? "Full-tunnel Wintun kernel driver active. Physical DNS locked to 1.1.1.1 (Anti-DPI)."
+            : "WinINET system HTTP/HTTPS proxy hooked to 127.0.0.1:1820 (Bypasses local loopback).";
+
+        public string StatusBadgeText => CurrentState switch
         {
-            if (ConnectionState == CyberConnectionState.Connected)
-            {
-                TimeSpan elapsed = DateTime.UtcNow - _connectedSinceUtc;
-                SessionUptime = elapsed.ToString(@"hh\:mm\:ss");
-                OnPropertyChanged(nameof(PrimaryActionSubtext));
-            }
+            TunnelConnectionState.Idle => "STANDBY",
+            TunnelConnectionState.Hunting => "HUNTING",
+            TunnelConnectionState.Connected => "CONNECTED",
+            _ => "STANDBY"
         };
 
-        InitializeNodes();
-
-        // Background non-blocking ping sweep on startup
-        _ = PingAllNodesAsync();
-    }
-
-    private void InitializeNodes()
-    {
-        var initialNodes = _pingService.LoadInitialNodePool();
-        EdgeNodes.Clear();
-        foreach (var node in initialNodes)
+        public string PrimaryActionButtonText => CurrentState switch
         {
-            EdgeNodes.Add(node);
-        }
+            TunnelConnectionState.Idle => "ENGAGE MASQUE LINK",
+            TunnelConnectionState.Hunting => "CANCEL HUNT",
+            TunnelConnectionState.Connected => "DISCONNECT TUNNEL",
+            _ => "ENGAGE MASQUE LINK"
+        };
 
-        SelectedNode = EdgeNodes.FirstOrDefault(n => n.IsAuto) ?? EdgeNodes.FirstOrDefault();
-        if (SelectedNode is not null)
+        public string CompanionStatusTitle => CurrentState switch
         {
-            SelectedNode.IsSelected = true;
-            ActiveEndpointDisplay = SelectedNode.IsAuto ? "AUTO TURBO MESH" : SelectedNode.Endpoint;
-        }
+            TunnelConnectionState.Idle => "Hearth Warmth Restored",
+            TunnelConnectionState.Hunting => "Hunting Anycast Mesh...",
+            TunnelConnectionState.Connected => "Mana Shield Synchronized",
+            _ => "Standby"
+        };
 
-        AppendLog("[INIT] Aether Cyber-Glass HUD ready. Clean IP pool armed.");
-    }
-
-    partial void OnSelectedNodeChanged(EdgeNodeModel? value)
-    {
-        if (value is null)
-            return;
-
-        foreach (var node in EdgeNodes)
+        public string CompanionAuraDescription => CurrentState switch
         {
-            node.IsSelected = ReferenceEquals(node, value);
-        }
+            TunnelConnectionState.Idle => "Aura breathing softly in standby mode. Ready to weave MASQUE HTTP/2 tunnel.",
+            TunnelConnectionState.Hunting => "Probing Cloudflare Anycast edge mesh via parallel HTTP/2 CONNECT-IP.",
+            TunnelConnectionState.Connected => "Secure zero-leak L3 tunnel locked. Traffic fully insulated against DPI filters.",
+            _ => "Aura resting."
+        };
 
-        if (ConnectionState == CyberConnectionState.Idle)
+        private TunnelMode SelectedMode => IsTunModeSelected ? TunnelMode.TrueTun : TunnelMode.SystemProxy;
+
+        public MainViewModel()
         {
-            ActiveEndpointDisplay = value.IsAuto ? "AUTO TURBO MESH" : value.Endpoint;
-            StatusSubtext = value.IsAuto
-                ? "Automatic Anycast selection enabled (--turbo)"
-                : $"Pinned to {value.Name} (--peer {value.Endpoint})";
-        }
+            // Sanitize any orphaned OS state from prior unexpected exits
+            AetherProcessService.KillOrphanedProcesses();
+            WinInetProxyManager.SanitizeOrphanedProxySettings();
+            TunEngineManager.CleanupOrphanedTunState();
 
-        OnPropertyChanged(nameof(PrimaryActionSubtext));
-    }
+            _jobManager = new JobObjectManager();
+            _processService = new AetherProcessService(_jobManager);
+            _proxyManager = new WinInetProxyManager(AppendRawLog);
+            _tunManager = new TunEngineManager(_jobManager, AppendRawLog);
 
-    [RelayCommand]
-    private void SelectNode(EdgeNodeModel? node)
-    {
-        if (node is null)
-            return;
+            _processService.LogReceived += HandleAetherLog;
+            _processService.TunnelStateChanged += HandleProcessTunnelStateChanged;
+            _processService.ActiveEndpointDetected += HandleActiveEndpointDetected;
+            _processService.TelemetryUpdated += HandleTelemetryUpdated;
 
-        SelectedNode = node;
-    }
-
-    [RelayCommand]
-    private void LockFastestNode()
-    {
-        var fastest = EdgeNodes
-            .Where(n => !n.IsAuto && n.LatencyMs > 0)
-            .OrderBy(n => n.LatencyMs)
-            .FirstOrDefault();
-
-        if (fastest is not null)
-        {
-            SelectedNode = fastest;
-            AppendLog($"[RADAR] Locked onto lowest-latency edge: {fastest.Name} ({fastest.Endpoint} @ {fastest.LatencyMs} ms)");
-        }
-    }
-
-    [RelayCommand]
-    private void SetRoutingMode(string? mode)
-    {
-        if (ConnectionState != CyberConnectionState.Idle)
-        {
-            AppendLog("[WARN] Disconnect the active tunnel before changing routing mode.");
-            return;
-        }
-
-        bool targetTun = string.Equals(mode, "TUN", StringComparison.OrdinalIgnoreCase);
-        if (IsTunMode == targetTun)
-            return;
-
-        IsTunMode = targetTun;
-        AppendLog($"[MODE] Routing architecture set to {(IsTunMode ? "True Wintun Kernel TUN" : "WinINET System Proxy (127.0.0.1:1820)")}.");
-    }
-
-    [RelayCommand]
-    private void ToggleForeignExit()
-    {
-        if (ConnectionState != CyberConnectionState.Idle)
-        {
-            AppendLog("[WARN] Disconnect active link before toggling European Exit mode.");
-            return;
-        }
-
-        IsForeignExitMode = !IsForeignExitMode;
-        AppendLog(IsForeignExitMode
-            ? "[CONFIG] European Foreign Exit enabled (MASQUE-in-MASQUE). Tunnel will route via inner European hop to show outside Iran."
-            : "[CONFIG] Direct MASQUE enabled. Maximum single-hop throughput and lowest latency.");
-    }
-
-    [RelayCommand]
-    private async Task PingAllNodesAsync()
-    {
-        if (IsPingingRadar)
-            return;
-
-        try
-        {
-            IsPingingRadar = true;
-            _pingCts?.Cancel();
-            _pingCts = new CancellationTokenSource();
-
-            RadarSummaryText = "Testing Real L7 TLS 1.3 Connectability...";
-            AppendLog("[RADAR] Initiating authentic L7 TLS 1.3 handshake probe across Cloudflare Anycast pool...");
-
-            string? currentSelectedEndpoint = SelectedNode?.Endpoint;
-            var sortedNodes = await _pingService.PingAllNodesAsync(EdgeNodes, _pingCts.Token).ConfigureAwait(true);
-
-            EdgeNodes.Clear();
-            foreach (var node in sortedNodes)
+            _uptimeTimer = new DispatcherTimer(DispatcherPriority.Background)
             {
-                EdgeNodes.Add(node);
-            }
-
-            var restored = EdgeNodes.FirstOrDefault(n => string.Equals(n.Endpoint, currentSelectedEndpoint, StringComparison.OrdinalIgnoreCase))
-                           ?? EdgeNodes.FirstOrDefault();
-
-            SelectedNode = restored;
-
-            int reachableCount = EdgeNodes.Count(n => !n.IsAuto && n.LatencyMs > 0);
-            int totalStatic = EdgeNodes.Count(n => !n.IsAuto);
-            var bestNode = EdgeNodes.FirstOrDefault(n => !n.IsAuto && n.LatencyMs > 0);
-
-            if (bestNode is not null)
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _uptimeTimer.Tick += (_, _) =>
             {
-                RadarSummaryText = $"{reachableCount}/{totalStatic} Online • Best: {bestNode.RegionCode} {bestNode.LatencyMs} ms";
-                AppendLog($"[RADAR] Sweep complete: {reachableCount}/{totalStatic} clean IPs verified. Fastest: {bestNode.Name} ({bestNode.Endpoint}) @ {bestNode.LatencyMs} ms.");
+                if (CurrentState == TunnelConnectionState.Connected)
+                {
+                    TimeSpan elapsed = DateTime.UtcNow - _connectedSinceUtc;
+                    CompanionSubtitle = $"ACTIVE LINK // {elapsed:hh\\:mm\\:ss} // {RouteDatacenter}";
+                }
+            };
+
+            AppendLog("[CORE]", "Aether MASQUE Core v2.4 initialized. Ready for turbo mesh hunt.", TealTagBrush);
+            AppendLog("[THEME]", "Marcille Donato (Elven Mana & Hearth Edition) visual profile loaded.", GoldTagBrush);
+            AppendLog("[CONFIG]", "Default arguments: --masque --h2 -4 --turbo --quick-reconnect --http-proxy 127.0.0.1:1820", CyanTagBrush);
+        }
+
+        private static Brush CreateFrozenBrush(string hexColor)
+        {
+            var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexColor));
+            brush.Freeze();
+            return brush;
+        }
+
+        [RelayCommand]
+        public async Task ToggleTunnel()
+        {
+            if (CurrentState == TunnelConnectionState.Connected || CurrentState == TunnelConnectionState.Hunting)
+            {
+                await DisconnectInternalAsync().ConfigureAwait(false);
             }
             else
             {
-                RadarSummaryText = $"0/{totalStatic} Reachable • Check ISP Link";
-                AppendLog("[RADAR] Sweep complete: All tested endpoints timed out (>1200ms).");
+                await ConnectInternalAsync(forceFreshScan: false).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException)
-        {
-            RadarSummaryText = "Radar Sweep Canceled";
-        }
-        catch (Exception ex)
-        {
-            RadarSummaryText = "Radar Sweep Error";
-            AppendLog($"[RADAR-ERR] {ex.Message}");
-        }
-        finally
-        {
-            IsPingingRadar = false;
-        }
-    }
 
-    [RelayCommand]
-    public async Task ToggleConnectionAsync()
-    {
-        if (ConnectionState == CyberConnectionState.Connected ||
-            ConnectionState == CyberConnectionState.Hunting)
+        public Task ToggleConnectionAsync() => ToggleTunnel();
+
+        [RelayCommand]
+        public async Task HuntNextEdge()
         {
+            AppendLog("[HUNT]", "Initiating forced edge re-scan across Anycast pool (--no-quick-reconnect)...", GoldTagBrush);
             await DisconnectInternalAsync().ConfigureAwait(false);
-            return;
+            await ConnectInternalAsync(forceFreshScan: true).ConfigureAwait(false);
         }
 
-        await ConnectInternalAsync(forceFreshScan: false).ConfigureAwait(false);
-    }
-
-    [RelayCommand]
-    private async Task ForceRescanConnectAsync()
-    {
-        await ConnectInternalAsync(forceFreshScan: true).ConfigureAwait(false);
-    }
-
-    private async Task ConnectInternalAsync(bool forceFreshScan)
-    {
-        _connectionCts?.Cancel();
-        _connectionCts = new CancellationTokenSource();
-
-        await RunOnUiThreadAsync(() =>
+        [RelayCommand]
+        public async Task CopyLogsAsync()
         {
-            ConnectionState = CyberConnectionState.Hunting;
-            StateChanged?.Invoke(Models.ConnectionState.Hunting, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
-
-            string? customPeer = SelectedNode is { IsAuto: false } ? SelectedNode.Endpoint : null;
-            bool isDirectPeer = !string.IsNullOrWhiteSpace(customPeer);
-
-            StatusHeadline = isDirectPeer
-                ? $"LOCKING PEER // {SelectedNode?.Name.ToUpperInvariant()}"
-                : "HUNTING CLEAN MASQUE EDGE...";
-
-            StatusSubtext = isDirectPeer
-                ? $"Establishing direct HTTP/2 MASQUE tunnel via {customPeer}"
-                : "Negotiating Cloudflare WARP Anycast Turbo handshake...";
-        });
-
-        long startTick = Stopwatch.GetTimestamp();
-        string? peerToPass = SelectedNode is { IsAuto: false } ? SelectedNode.Endpoint : null;
-
-        bool started = await _processService.StartAsync(
-            forceFreshScan: forceFreshScan,
-            customPeer: peerToPass,
-            useForeignExit: IsForeignExitMode,
-            cancellationToken: _connectionCts.Token).ConfigureAwait(false);
-
-        if (!started)
-        {
-            await RunOnUiThreadAsync(() =>
+            try
             {
-                ConnectionState = CyberConnectionState.Idle;
-                StateChanged?.Invoke(Models.ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
-                StatusHeadline = "LINK FAILED // RETRY OR SWITCH PEER";
-                StatusSubtext = "Select another green (<180ms) Anycast node from the Clean IP Radar";
-            });
-            return;
-        }
+                var sb = new StringBuilder();
+                foreach (var log in Logs)
+                {
+                    sb.AppendLine($"{log.Timestamp} {log.Tag} {log.Message}");
+                }
 
-        // Engage system routing layer (Wintun kernel TUN vs WinINET proxy)
-        try
-        {
-            if (IsTunMode)
-            {
-                string? endpointIp = SelectedNode?.IpOnly;
-                await _tunManager.StartTunAsync(endpointIp, _connectionCts.Token).ConfigureAwait(false);
+                Clipboard.SetText(sb.ToString());
+
+                CopyButtonText = "Copied!";
+                IsCopyFeedbackActive = true;
+                await Task.Delay(1800);
             }
-            else
+            catch
             {
-                _proxyManager.EnableProxy();
+                // Ignore clipboard failures
+            }
+            finally
+            {
+                CopyButtonText = "Copy Logs";
+                IsCopyFeedbackActive = false;
             }
         }
-        catch (Exception ex)
+
+        [RelayCommand]
+        public void ClearLogs()
         {
-            AppendLog($"[NET-ERR] Routing activation failed: {ex.Message}");
-            await DisconnectInternalAsync().ConfigureAwait(false);
-            return;
+            Logs.Clear();
+            AppendLog("[CLEAR]", "Telemetry console cleared by operator.", GoldTagBrush);
+            LogCountBadgeText = "1 event";
         }
 
-        int connectMs = (int)Math.Round(Stopwatch.GetElapsedTime(startTick).TotalMilliseconds);
-
-        await RunOnUiThreadAsync(() =>
-        {
-            LastHandshakeDuration = $"{connectMs} ms";
-            _connectedSinceUtc = DateTime.UtcNow;
-            SessionUptime = "00:00:00";
-            _uptimeTimer.Start();
-
-            ConnectionState = CyberConnectionState.Connected;
-            StateChanged?.Invoke(Models.ConnectionState.Connected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
-
-            ActiveEndpointDisplay = peerToPass ?? "TURBO ANYCAST MESH";
-            StatusHeadline = "MASQUE TUNNEL ACTIVE // ZERO LEAK";
-            StatusSubtext = $"Connected in {connectMs} ms • Mode: {ActiveRoutingBadge}";
-            AppendLog($"[LINK] MASQUE Tunnel fully armed in {connectMs} ms ({ActiveRoutingBadge}).");
-        });
-    }
-
-    public async Task DisconnectAsync()
-    {
-        await DisconnectInternalAsync().ConfigureAwait(false);
-    }
-
-    private async Task DisconnectInternalAsync()
-    {
-        try
+        private async Task ConnectInternalAsync(bool forceFreshScan)
         {
             _connectionCts?.Cancel();
+            _connectionCts = new CancellationTokenSource();
+
+            string reconnectFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
+            LastExecutedCommand = $"aether.exe --masque --h2 -4 --turbo {reconnectFlag} --http-proxy 127.0.0.1:1820";
+
             await RunOnUiThreadAsync(() =>
             {
-                _uptimeTimer.Stop();
-                StatusHeadline = "DISENGAGING MASQUE CORE...";
+                CurrentState = TunnelConnectionState.Hunting;
+                StateChanged?.Invoke(ConnectionState.Hunting, SelectedMode);
+                CompanionSubtitle = "PROBING ANYCAST MESH // CONNECT-IP RFC 9298";
             });
 
-            _tunManager.StopTun();
-            _proxyManager.DisableProxy();
-            await _processService.StopAsync().ConfigureAwait(false);
-        }
-        finally
-        {
+            AppendLog("[HUNT]", $"Engaging Anycast Turbo Hunter ({reconnectFlag})...", GoldTagBrush);
+
+            bool started = await _processService.StartAsync(
+                forceFreshScan: forceFreshScan,
+                customPeer: null, // Always rely on Aether's proven internal hunter!
+                useForeignExit: false,
+                cancellationToken: _connectionCts.Token).ConfigureAwait(false);
+
+            if (!started)
+            {
+                await RunOnUiThreadAsync(() =>
+                {
+                    CurrentState = TunnelConnectionState.Idle;
+                    StateChanged?.Invoke(ConnectionState.Disconnected, SelectedMode);
+                    CompanionSubtitle = "CONNECTION FAILED // RETRY HUNT";
+                });
+                AppendLog("[FAIL]", "Could not initiate Aether process or proxy sockets timed out.", CrimsonTagBrush);
+                return;
+            }
+
+            // Engage system routing layer (Wintun kernel TUN vs WinINET proxy)
+            try
+            {
+                if (IsTunModeSelected)
+                {
+                    AppendLog("[TUN]", "Engaging Wintun L3 interface and locking DNS to 1.1.1.1...", TealTagBrush);
+                    await _tunManager.StartTunAsync(_detectedPeerIp, _connectionCts.Token).ConfigureAwait(false);
+                    AppendLog("[TUN]", "Wintun L3 kernel driver active. Default route established.", EmeraldTagBrush);
+                }
+                else
+                {
+                    AppendLog("[PROXY]", "Setting WinINET system proxy to 127.0.0.1:1820...", TealTagBrush);
+                    _proxyManager.EnableProxy();
+                    AppendLog("[PROXY]", "WinINET system proxy active on 127.0.0.1:1820.", EmeraldTagBrush);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog("[NET-ERR]", $"Failed to engage network layer: {ex.Message}", CrimsonTagBrush);
+                await DisconnectInternalAsync().ConfigureAwait(false);
+                return;
+            }
+
             await RunOnUiThreadAsync(() =>
             {
-                ConnectionState = CyberConnectionState.Idle;
-                StateChanged?.Invoke(Models.ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
-                SessionUptime = "00:00:00";
-                StatusHeadline = "STANDBY // AETHER MASQUE READY";
-                StatusSubtext = SelectedNode is { IsAuto: false }
-                    ? $"Pinned to {SelectedNode.Name} (--peer {SelectedNode.Endpoint})"
-                    : "Select an Anycast Clean IP or engage Auto Turbo Mesh";
-                AppendLog("[LINK] Tunnel disconnected cleanly.");
+                _connectedSinceUtc = DateTime.UtcNow;
+                _uptimeTimer.Start();
+                CurrentState = TunnelConnectionState.Connected;
+                StateChanged?.Invoke(ConnectionState.Connected, SelectedMode);
+                CompanionSubtitle = $"PROTECTED VIA {GatewayPeer} // {RouteDatacenter}";
             });
+
+            AppendLog("[LINK]", "MASQUE zero-leak tunnel fully armed and active.", EmeraldTagBrush);
         }
-    }
 
-    private void OnTelemetryUpdated(ExitNodeTelemetry telemetry)
-    {
-        AppendLog($"[TELEMETRY] Exit Node: {telemetry.IpAddress} ({telemetry.Route}) | RTT: {telemetry.Rtt}");
-    }
-
-    private void OnActiveEndpointDetected(string endpoint)
-    {
-        RunOnUiThread(() =>
+        private async Task DisconnectInternalAsync()
         {
-            ActiveEndpointDisplay = endpoint;
-            OnPropertyChanged(nameof(PrimaryActionSubtext));
-        });
-
-        if (IsTunMode && !string.IsNullOrWhiteSpace(endpoint))
-        {
-            _tunManager.AddBypassHostRoute(endpoint);
-        }
-    }
-
-    private void OnProcessTunnelStateChanged(bool isRunning)
-    {
-        RunOnUiThread(() =>
-        {
-            if (!isRunning && ConnectionState == CyberConnectionState.Connected)
+            try
             {
-                _uptimeTimer.Stop();
+                _connectionCts?.Cancel();
+                await RunOnUiThreadAsync(() =>
+                {
+                    _uptimeTimer.Stop();
+                    CompanionSubtitle = "DISENGAGING MASQUE CORE...";
+                });
+
                 _tunManager.StopTun();
                 _proxyManager.DisableProxy();
-                ConnectionState = CyberConnectionState.Idle;
-                StateChanged?.Invoke(Models.ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
-                StatusHeadline = "STANDBY // LINK TERMINATED";
-                StatusSubtext = "Core process stopped. Ready to re-engage.";
-                AppendLog("[WARN] MASQUE backend closed unexpectedly.");
+                await _processService.StopAsync().ConfigureAwait(false);
             }
-        });
-    }
-
-    private void AppendLog(string message)
-    {
-        RunOnUiThread(() =>
-        {
-            TelemetryLogs.Add(message);
-            while (TelemetryLogs.Count > MaxLogEntries)
+            finally
             {
-                TelemetryLogs.RemoveAt(0);
+                await RunOnUiThreadAsync(() =>
+                {
+                    CurrentState = TunnelConnectionState.Idle;
+                    StateChanged?.Invoke(ConnectionState.Disconnected, SelectedMode);
+                    CompanionSubtitle = "ELVEN MANA & HEARTH // MASQUE EDITION";
+                });
+                AppendLog("[LINK]", "Tunnel disengaged cleanly. Adapters restored.", TealTagBrush);
             }
-        });
-    }
-
-    private static void RunOnUiThread(Action action)
-    {
-        if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.HasShutdownStarted)
-        {
-            if (dispatcher.CheckAccess())
-                action();
-            else
-                dispatcher.InvokeAsync(action);
-        }
-    }
-
-    private static Task RunOnUiThreadAsync(Action action)
-    {
-        if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.HasShutdownStarted)
-        {
-            if (dispatcher.CheckAccess())
-            {
-                action();
-                return Task.CompletedTask;
-            }
-            return dispatcher.InvokeAsync(action).Task;
         }
 
-        action();
-        return Task.CompletedTask;
-    }
+        private void HandleAetherLog(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return;
 
-    public void Dispose()
-    {
-        if (_disposed)
-            return;
+            string tag = "[CORE]";
+            Brush brush = TealTagBrush;
 
-        _disposed = true;
-        _uptimeTimer.Stop();
-        _pingCts?.Cancel();
-        _connectionCts?.Cancel();
+            if (raw.Contains("masque exit:", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = "[EXIT]";
+                brush = EmeraldTagBrush;
+            }
+            else if (raw.Contains("Selected edge:", StringComparison.OrdinalIgnoreCase) ||
+                     raw.Contains("connect-ip status: 200", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = "[HANDSHAKE]";
+                brush = EmeraldTagBrush;
+            }
+            else if (raw.Contains("hunting", StringComparison.OrdinalIgnoreCase) ||
+                     raw.Contains("probing", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = "[RADAR]";
+                brush = GoldTagBrush;
+            }
+            else if (raw.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+                     raw.Contains("failed", StringComparison.OrdinalIgnoreCase) ||
+                     raw.Contains("10054", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = "[WARN]";
+                brush = CrimsonTagBrush;
+            }
 
-        _tunManager.Dispose();
-        _proxyManager.DisableProxy();
-        _processService.Dispose();
-        _jobManager.Dispose();
+            AppendLog(tag, raw, brush);
+        }
+
+        private void AppendRawLog(string message)
+        {
+            string tag = "[NET]";
+            Brush brush = TealTagBrush;
+
+            if (message.StartsWith("[TUN2SOCKS]", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = "[TUN]";
+                brush = TealTagBrush;
+            }
+            else if (message.StartsWith("[DNS]", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = "[DNS]";
+                brush = GoldTagBrush;
+            }
+            else if (message.StartsWith("[PROXY]", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = "[PROXY]";
+                brush = CyanTagBrush;
+            }
+            else if (message.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+                     message.Contains("fail", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = "[ERR]";
+                brush = CrimsonTagBrush;
+            }
+
+            AppendLog(tag, message, brush);
+        }
+
+        private void HandleTelemetryUpdated(ExitNodeTelemetry telemetry)
+        {
+            RunOnUiThread(() =>
+            {
+                RouteDatacenter = $"{telemetry.Route} ({telemetry.IpAddress})";
+                LatencyRtt = telemetry.Rtt;
+            });
+            AppendLog("[EXIT]", $"MASQUE Exit: {telemetry.IpAddress} ({telemetry.Route}) | RTT: {telemetry.Rtt}", EmeraldTagBrush);
+        }
+
+        private void HandleActiveEndpointDetected(string endpoint)
+        {
+            _detectedPeerIp = endpoint.Split(':')[0];
+            RunOnUiThread(() =>
+            {
+                GatewayPeer = endpoint;
+            });
+
+            if (IsTunModeSelected && !string.IsNullOrWhiteSpace(endpoint))
+            {
+                _tunManager.AddBypassHostRoute(endpoint);
+            }
+        }
+
+        private void HandleProcessTunnelStateChanged(bool isRunning)
+        {
+            RunOnUiThread(() =>
+            {
+                if (!isRunning && CurrentState == TunnelConnectionState.Connected)
+                {
+                    _uptimeTimer.Stop();
+                    _tunManager.StopTun();
+                    _proxyManager.DisableProxy();
+                    CurrentState = TunnelConnectionState.Idle;
+                    StateChanged?.Invoke(ConnectionState.Disconnected, SelectedMode);
+                    CompanionSubtitle = "BACKEND DISCONNECTED // READY TO RECONNECT";
+                    AppendLog("[WARN]", "Aether backend terminated unexpectedly.", CrimsonTagBrush);
+                }
+            });
+        }
+
+        public void AppendLog(string tag, string message, Brush tagBrush, Brush? messageBrush = null)
+        {
+            var entry = new TelemetryLogEntry
+            {
+                Timestamp = DateTime.Now.ToString("HH:mm:ss"),
+                Tag = tag,
+                Message = message,
+                TagBrush = tagBrush,
+                MessageBrush = messageBrush ?? SecondaryTextBrush
+            };
+
+            RunOnUiThread(() =>
+            {
+                Logs.Add(entry);
+                while (Logs.Count > MaxLogEntries)
+                {
+                    Logs.RemoveAt(0);
+                }
+                LogCountBadgeText = $"{Logs.Count} events";
+            });
+        }
+
+        private static void RunOnUiThread(Action action)
+        {
+            if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.HasShutdownStarted)
+            {
+                if (dispatcher.CheckAccess())
+                    action();
+                else
+                    dispatcher.InvokeAsync(action);
+            }
+        }
+
+        private static Task RunOnUiThreadAsync(Action action)
+        {
+            if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.HasShutdownStarted)
+            {
+                if (dispatcher.CheckAccess())
+                {
+                    action();
+                    return Task.CompletedTask;
+                }
+                return dispatcher.InvokeAsync(action).Task;
+            }
+
+            action();
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            if (_isDisposed)
+                return;
+
+            _isDisposed = true;
+            _uptimeTimer.Stop();
+            _connectionCts?.Cancel();
+
+            _tunManager.Dispose();
+            _proxyManager.DisableProxy();
+            _processService.Dispose();
+            _jobManager.Dispose();
+        }
     }
 }

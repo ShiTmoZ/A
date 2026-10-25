@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
@@ -8,226 +9,319 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using AetherClient.ViewModels;
 
-namespace AetherClient.Views;
-
-public partial class MainWindow : Window
+namespace AetherClient.Views
 {
-    private readonly Action? _onHideToTray;
-    public bool AllowClose { get; set; }
-
-    public MainWindow() : this(new MainViewModel(), null)
+    public partial class MainWindow : Window
     {
-    }
+        private readonly MainViewModel _viewModel;
+        private readonly Action? _onMinimizedToTray;
 
-    public MainWindow(MainViewModel viewModel, Action? onHideToTray = null)
-    {
-        InitializeComponent();
-        DataContext = viewModel;
-        _onHideToTray = onHideToTray;
+        public bool AllowClose { get; set; }
 
-        SafeSetWindowIcon();
-        LoadCompanionAvatar();
-
-        viewModel.PropertyChanged += OnViewModelPropertyChanged;
-
-        Loaded += (_, _) =>
+        public MainWindow() : this(new MainViewModel(), null)
         {
-            ApplyAvatarVisualState(viewModel.ConnectionState);
-        };
+        }
 
-        Closed += (_, _) =>
+        public MainWindow(MainViewModel viewModel, Action? onMinimizedToTray = null)
         {
-            if (DataContext is IDisposable disposable)
+            InitializeComponent();
+
+            _viewModel = viewModel;
+            DataContext = _viewModel;
+            _onMinimizedToTray = onMinimizedToTray;
+
+            SafeSetWindowIcon();
+            SafeLoadAvatarImage();
+
+            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+            if (_viewModel.Logs is INotifyCollectionChanged notifyLogs)
             {
-                disposable.Dispose();
-            }
-        };
-    }
-
-    private void SafeSetWindowIcon()
-    {
-        try
-        {
-            string diskIconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.ico");
-            if (File.Exists(diskIconPath))
-            {
-                Icon = BitmapFrame.Create(new Uri(diskIconPath, UriKind.Absolute));
-                return;
+                notifyLogs.CollectionChanged += Logs_CollectionChanged;
             }
 
-            var packUri = new Uri("pack://application:,,,/app.ico", UriKind.Absolute);
-            Icon = BitmapFrame.Create(packUri);
+            Loaded += MainWindow_Loaded;
         }
-        catch
-        {
-            // Ignore icon failure to allow window to open regardless
-        }
-    }
 
-    private void LoadCompanionAvatar()
-    {
-        try
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            string localAvatarPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "avatar.jpg");
-            if (File.Exists(localAvatarPath))
+            StartAmbientOrbitalAnimation();
+            ApplyConnectionStateAnimations(_viewModel.CurrentState);
+            ScrollLogsToBottom();
+        }
+
+        /// <summary>
+        /// Safely loads app.ico in code-behind without risking a XAML BAML parser crash if missing.
+        /// </summary>
+        private void SafeSetWindowIcon()
+        {
+            try
             {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(localAvatarPath, UriKind.Absolute);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                CompanionAvatarImage.Source = bitmap;
-                return;
-            }
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string[] candidatePaths =
+                {
+                    Path.Combine(baseDir, "app.ico"),
+                    Path.Combine(baseDir, "assets", "app.ico"),
+                    Path.Combine(baseDir, "Assets", "app.ico"),
+                    Path.Combine(Environment.CurrentDirectory, "app.ico"),
+                    Path.Combine(Environment.CurrentDirectory, "assets", "app.ico")
+                };
 
-            // Fallback to pack URI if compiled as Resource
-            var packUri = new Uri("pack://application:,,,/assets/avatar.jpg", UriKind.Absolute);
-            var packBitmap = new BitmapImage();
-            packBitmap.BeginInit();
-            packBitmap.UriSource = packUri;
-            packBitmap.CacheOption = BitmapCacheOption.OnLoad;
-            packBitmap.EndInit();
-            packBitmap.Freeze();
-            CompanionAvatarImage.Source = packBitmap;
-        }
-        catch
-        {
-            // Silently fall back to the vector Cyber-Elf silhouette underneath CompanionAvatarImage
-        }
-    }
-
-    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(MainViewModel.ConnectionState) && sender is MainViewModel vm)
-        {
-            Dispatcher.Invoke(() => ApplyAvatarVisualState(vm.ConnectionState));
-        }
-    }
-
-    private void StopAllAnimations()
-    {
-        try
-        {
-            IdleCyanRing.BeginAnimation(OpacityProperty, null);
-            RadarRingRotateTransform.BeginAnimation(RotateTransform.AngleProperty, null);
-            EqBar1.BeginAnimation(HeightProperty, null);
-            EqBar2.BeginAnimation(HeightProperty, null);
-            EqBar3.BeginAnimation(HeightProperty, null);
-            EqBar4.BeginAnimation(HeightProperty, null);
-        }
-        catch { }
-    }
-
-    private void ApplyAvatarVisualState(CyberConnectionState state)
-    {
-        try
-        {
-            StopAllAnimations();
-
-            IdleCyanRing.Visibility = Visibility.Collapsed;
-            HuntingAmberRadarRing.Visibility = Visibility.Collapsed;
-            ConnectedEmeraldRing.Visibility = Visibility.Collapsed;
-            ConnectedEqualizerBadge.Visibility = Visibility.Collapsed;
-
-            switch (state)
-            {
-                case CyberConnectionState.Idle:
-                    IdleCyanRing.Visibility = Visibility.Visible;
-                    var breatheAnim = new DoubleAnimation
+                foreach (string path in candidatePaths)
+                {
+                    if (File.Exists(path))
                     {
-                        From = 0.45,
-                        To = 1.0,
-                        Duration = TimeSpan.FromSeconds(1.8),
-                        AutoReverse = true,
-                        RepeatBehavior = RepeatBehavior.Forever,
-                        EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
-                    };
-                    IdleCyanRing.BeginAnimation(OpacityProperty, breatheAnim);
-                    break;
-
-                case CyberConnectionState.Hunting:
-                    HuntingAmberRadarRing.Visibility = Visibility.Visible;
-                    var radarSpin = new DoubleAnimation
-                    {
-                        From = 0,
-                        To = 360,
-                        Duration = TimeSpan.FromSeconds(2.2),
-                        RepeatBehavior = RepeatBehavior.Forever
-                    };
-                    RadarRingRotateTransform.BeginAnimation(RotateTransform.AngleProperty, radarSpin);
-                    break;
-
-                case CyberConnectionState.Connected:
-                    ConnectedEmeraldRing.Visibility = Visibility.Visible;
-                    ConnectedEqualizerBadge.Visibility = Visibility.Visible;
-
-                    AnimateBar(EqBar1, 4, 13, 320);
-                    AnimateBar(EqBar2, 12, 4, 260);
-                    AnimateBar(EqBar3, 5, 14, 380);
-                    AnimateBar(EqBar4, 13, 5, 290);
-                    break;
+                        using var stream = File.OpenRead(path);
+                        Icon = BitmapFrame.Create(stream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // Keep default system icon if app.ico is unavailable or invalid.
             }
         }
-        catch
-        {
-            // Animation failure must never crash the UI
-        }
-    }
 
-    private static void AnimateBar(FrameworkElement bar, double from, double to, int durationMs)
-    {
-        try
+        /// <summary>
+        /// Safely loads assets/avatar.jpg into the circular HUD container while preserving
+        /// the stylized geometric elven silhouette fallback if the file is absent.
+        /// </summary>
+        private void SafeLoadAvatarImage()
         {
-            var anim = new DoubleAnimation
+            try
             {
-                From = from,
-                To = to,
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string[] candidatePaths =
+                {
+                    Path.Combine(baseDir, "assets", "avatar.jpg"),
+                    Path.Combine(baseDir, "Assets", "avatar.jpg"),
+                    Path.Combine(baseDir, "assets", "avatar.png"),
+                    Path.Combine(Environment.CurrentDirectory, "assets", "avatar.jpg"),
+                    Path.Combine(Environment.CurrentDirectory, "Assets", "avatar.jpg")
+                };
+
+                foreach (string path in candidatePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.UriSource = new Uri(path, UriKind.Absolute);
+                        bitmap.EndInit();
+                        bitmap.Freeze();
+
+                        AvatarImageBrush.ImageSource = bitmap;
+                        AvatarImageContainer.Visibility = Visibility.Visible;
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                AvatarImageContainer.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void StartAmbientOrbitalAnimation()
+        {
+            var orbitalSpin = new DoubleAnimation
+            {
+                From = 0,
+                To = -360,
+                Duration = TimeSpan.FromSeconds(28),
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+            OrbitalRotateTransform.BeginAnimation(RotateTransform.AngleProperty, orbitalSpin);
+        }
+
+        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainViewModel.CurrentState))
+            {
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    ApplyConnectionStateAnimations(_viewModel.CurrentState);
+                });
+            }
+        }
+
+        /// <summary>
+        /// Drives hardware-accelerated UIElement.BeginAnimation transitions across IDLE, HUNTING, and CONNECTED states.
+        /// </summary>
+        private void ApplyConnectionStateAnimations(TunnelConnectionState state)
+        {
+            // Clear existing dynamic animations before applying new state profile
+            AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            RadarRotateTransform.BeginAnimation(RotateTransform.AngleProperty, null);
+            StopEqualizerAnimations();
+
+            if (state == TunnelConnectionState.Idle)
+            {
+                // IDLE: Soft breathing aura using Marcille's Primary Cloak Teal/Cyan (#22B8CF)
+                var cyanColor = (Color)FindResource("PrimaryCyanGlowColor");
+                AuraOuterRing.Stroke = new SolidColorBrush(cyanColor);
+                OrbitalDashedRing.Stroke = new SolidColorBrush(cyanColor);
+                AuraDropShadow.Color = cyanColor;
+
+                var breatheAnimation = new DoubleAnimation
+                {
+                    From = 0.96,
+                    To = 1.04,
+                    Duration = TimeSpan.FromSeconds(2.4),
+                    AutoReverse = true,
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                };
+
+                AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, breatheAnimation);
+                AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, breatheAnimation);
+            }
+            else if (state == TunnelConnectionState.Hunting)
+            {
+                // HUNTING: Rotating radar sweep using Marcille's Golden Blonde Highlight (#F5A623)
+                var goldColor = (Color)FindResource("SecondaryGoldColor");
+                AuraOuterRing.Stroke = new SolidColorBrush(goldColor);
+                OrbitalDashedRing.Stroke = new SolidColorBrush(goldColor);
+                AuraDropShadow.Color = goldColor;
+
+                var pulseAnimation = new DoubleAnimation
+                {
+                    From = 0.94,
+                    To = 1.06,
+                    Duration = TimeSpan.FromSeconds(0.9),
+                    AutoReverse = true,
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                };
+                AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, pulseAnimation);
+                AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, pulseAnimation);
+
+                var radarSweepAnimation = new DoubleAnimation
+                {
+                    From = 0,
+                    To = 360,
+                    Duration = TimeSpan.FromSeconds(1.35),
+                    RepeatBehavior = RepeatBehavior.Forever
+                };
+                RadarRotateTransform.BeginAnimation(RotateTransform.AngleProperty, radarSweepAnimation);
+            }
+            else if (state == TunnelConnectionState.Connected)
+            {
+                // CONNECTED: Vibrant Mana Emerald aura (#4ADE80) + animated micro equalizer telemetry bars
+                var emeraldColor = (Color)FindResource("ConnectedEmeraldColor");
+                AuraOuterRing.Stroke = new SolidColorBrush(emeraldColor);
+                OrbitalDashedRing.Stroke = new SolidColorBrush(emeraldColor);
+                AuraDropShadow.Color = emeraldColor;
+
+                var connectedPulse = new DoubleAnimation
+                {
+                    From = 0.98,
+                    To = 1.03,
+                    Duration = TimeSpan.FromSeconds(1.8),
+                    AutoReverse = true,
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                };
+                AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, connectedPulse);
+                AuraScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, connectedPulse);
+
+                StartEqualizerAnimations();
+            }
+        }
+
+        private void StartEqualizerAnimations()
+        {
+            AnimateEqualizerBar(EqBar1, 4, 13, 380);
+            AnimateEqualizerBar(EqBar2, 5, 14, 290);
+            AnimateEqualizerBar(EqBar3, 3, 12, 430);
+            AnimateEqualizerBar(EqBar4, 6, 14, 320);
+            AnimateEqualizerBar(EqBar5, 4, 11, 360);
+        }
+
+        private static void AnimateEqualizerBar(FrameworkElement bar, double minHeight, double maxHeight, int durationMs)
+        {
+            var heightAnim = new DoubleAnimation
+            {
+                From = minHeight,
+                To = maxHeight,
                 Duration = TimeSpan.FromMilliseconds(durationMs),
                 AutoReverse = true,
                 RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
             };
-            bar.BeginAnimation(HeightProperty, anim);
+            bar.BeginAnimation(HeightProperty, heightAnim);
         }
-        catch { }
-    }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ChangedButton == MouseButton.Left)
+        private void StopEqualizerAnimations()
         {
-            DragMove();
+            EqBar1?.BeginAnimation(HeightProperty, null);
+            EqBar2?.BeginAnimation(HeightProperty, null);
+            EqBar3?.BeginAnimation(HeightProperty, null);
+            EqBar4?.BeginAnimation(HeightProperty, null);
+            EqBar5?.BeginAnimation(HeightProperty, null);
         }
-    }
 
-    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState.Minimized;
-    }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (!AllowClose && _onHideToTray is not null)
+        private void Logs_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            Hide();
-            _onHideToTray();
-            return;
+            if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                Application.Current?.Dispatcher.BeginInvoke(new Action(ScrollLogsToBottom));
+            }
         }
 
-        Close();
-    }
-
-    protected override void OnClosing(CancelEventArgs e)
-    {
-        if (!AllowClose && _onHideToTray is not null)
+        private void ScrollLogsToBottom()
         {
-            e.Cancel = true;
-            Hide();
-            _onHideToTray();
-            return;
+            if (TelemetryLogListBox.Items.Count > 0)
+            {
+                var lastItem = TelemetryLogListBox.Items[TelemetryLogListBox.Items.Count - 1];
+                TelemetryLogListBox.ScrollIntoView(lastItem);
+            }
         }
 
-        base.OnClosing(e);
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                DragMove();
+            }
+        }
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+            _onMinimizedToTray?.Invoke();
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!AllowClose && _onMinimizedToTray is not null)
+            {
+                Hide();
+                _onMinimizedToTray();
+                return;
+            }
+
+            Close();
+        }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            if (!AllowClose && _onMinimizedToTray is not null)
+            {
+                e.Cancel = true;
+                Hide();
+                _onMinimizedToTray();
+                return;
+            }
+
+            _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+            if (_viewModel.Logs is INotifyCollectionChanged notifyLogs)
+            {
+                notifyLogs.CollectionChanged -= Logs_CollectionChanged;
+            }
+            _viewModel.Dispose();
+        }
     }
 }

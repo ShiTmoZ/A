@@ -91,16 +91,17 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           name: Cloudflare WARP (MASQUE Edition) ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           body: |
-            ### Cloudflare WARP (MASQUE Edition) - Neo-Tokyo Cyber-Glass Release
+            ### Cloudflare WARP (MASQUE Edition) — Elven Mana & Hearth Edition
             Zero-bloat, production-grade desktop client for Cloudflare MASQUE (RFC 9298) HTTP/2 censorship bypass on DPI-restricted networks (TCI / MCI / Irancell).
 
             #### What's New:
-            - **Neo-Tokyo Cyber-Glass UI**: Framed anime companion HUD with reactive status rings (Idle Cyan breathing, Hunting Amber radar rotation, Connected Emerald shield + live micro-equalizer audio bars).
-            - **Embedded Anycast Clean IP Radar**: Parallel TCP SYN-ACK handshake engine (sub-1200ms timeout) across 15+ curated Cloudflare edges with color-coded latency tiers (<180ms Emerald, 180-280ms Amber, >280ms Crimson).
-            - **Sub-400ms Direct Peer Lock**: Instant connection bypass via `--peer <IP:PORT>` eliminating the 45-second scan phase.
-            - **Custom IP Pool Integration**: Drop custom endpoints into `clean_ips.txt` next to the executable for instant auto-loading.
-            - **Anti-DNS Poisoning True TUN**: Automatic DNS clamp to `1.1.1.1` via `netsh` preventing `10.10.34.34` censorship spoofing.
-            - **Kernel Job Objects**: Zero-orphan process tree lifecycle guarantee.
+            - **Marcille Donato Aesthetic Profile**: Deep cloaked glass backdrop with teal mana glow (#22B8CF), hearth gold highlights (#FFD166), and responsive avatar telemetry HUD.
+            - **Restored Telemetry Console & 1-Click Copy**: Full high-speed monospace event stream with one-click clipboard copy feedback ("Copied!") and log clear.
+            - **Automatic Anycast Turbo Mesh**: Restored authentic 2,079+ edge parallel hunter (`--turbo`) for guaranteed DPI tunnel bypass in Iran without broken static IP locks.
+            - **Dual Routing Architecture**:
+              - *True TUN (Wintun)*: Kernel-level L3 adapter with automated DNS clamp to `1.1.1.1` via `netsh` preventing `10.10.34.34` DNS spoofing.
+              - *System Proxy*: WinINET local proxy on `127.0.0.1:1820` with instant browser cache refresh.
+            - **Zero-Orphan Process Lifecycle**: Native Windows Job Objects terminate child engines immediately upon window close.
           files: .\AetherClient-Windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
