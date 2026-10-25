@@ -272,7 +272,7 @@
                                              Stroke="#262C3A"
                                              Fill="#0F1117">
                                         <Ellipse.Effect>
-                                            <DropShadowEffect x:Name="OrbGlow" Color="#38BDF8" BlurRadius="28" ShadowDepth="0" Opacity="0" />
+                                            <DropShadowEffect Color="#38BDF8" BlurRadius="28" ShadowDepth="0" Opacity="0" />
                                         </Ellipse.Effect>
                                     </Ellipse>
 
@@ -301,14 +301,20 @@
                                     <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
                                         <Setter TargetName="OuterRing" Property="Stroke" Value="#F59E0B" />
                                         <Setter TargetName="PowerGlyph" Property="Stroke" Value="#F59E0B" />
-                                        <Setter TargetName="OrbGlow" Property="Color" Value="#F59E0B" />
-                                        <Setter TargetName="OrbGlow" Property="Opacity" Value="0.35" />
+                                        <Setter TargetName="OuterRing" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#F59E0B" BlurRadius="28" ShadowDepth="0" Opacity="0.35" />
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
                                         <Setter TargetName="OuterRing" Property="Stroke" Value="#38BDF8" />
                                         <Setter TargetName="PowerGlyph" Property="Stroke" Value="#38BDF8" />
-                                        <Setter TargetName="OrbGlow" Property="Color" Value="#38BDF8" />
-                                        <Setter TargetName="OrbGlow" Property="Opacity" Value="0.45" />
+                                        <Setter TargetName="OuterRing" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#38BDF8" BlurRadius="28" ShadowDepth="0" Opacity="0.45" />
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
