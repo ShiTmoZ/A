@@ -310,7 +310,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await RunOnUiThreadAsync(() =>
         {
             ConnectionState = CyberConnectionState.Hunting;
-            StateChanged?.Invoke(ConnectionState.Hunting, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+            StateChanged?.Invoke(Models.ConnectionState.Hunting, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
 
             string? customPeer = SelectedNode is { IsAuto: false } ? SelectedNode.Endpoint : null;
             bool isDirectPeer = !string.IsNullOrWhiteSpace(customPeer);
@@ -337,7 +337,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await RunOnUiThreadAsync(() =>
             {
                 ConnectionState = CyberConnectionState.Idle;
-                StateChanged?.Invoke(ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+                StateChanged?.Invoke(Models.ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
                 StatusHeadline = "LINK FAILED // RETRY OR SWITCH PEER";
                 StatusSubtext = "Select another green (<180ms) Anycast node from the Clean IP Radar";
             });
@@ -374,7 +374,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _uptimeTimer.Start();
 
             ConnectionState = CyberConnectionState.Connected;
-            StateChanged?.Invoke(ConnectionState.Connected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+            StateChanged?.Invoke(Models.ConnectionState.Connected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
 
             ActiveEndpointDisplay = peerToPass ?? "TURBO ANYCAST MESH";
             StatusHeadline = "MASQUE TUNNEL ACTIVE // ZERO LEAK";
@@ -408,7 +408,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await RunOnUiThreadAsync(() =>
             {
                 ConnectionState = CyberConnectionState.Idle;
-                StateChanged?.Invoke(ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+                StateChanged?.Invoke(Models.ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
                 SessionUptime = "00:00:00";
                 StatusHeadline = "STANDBY // AETHER MASQUE READY";
                 StatusSubtext = SelectedNode is { IsAuto: false }
@@ -448,7 +448,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 _tunManager.StopTun();
                 _proxyManager.DisableProxy();
                 ConnectionState = CyberConnectionState.Idle;
-                StateChanged?.Invoke(ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
+                StateChanged?.Invoke(Models.ConnectionState.Disconnected, IsTunMode ? TunnelMode.TrueTun : TunnelMode.SystemProxy);
                 StatusHeadline = "STANDBY // LINK TERMINATED";
                 StatusSubtext = "Core process stopped. Ready to re-engage.";
                 AppendLog("[WARN] MASQUE backend closed unexpectedly.");
