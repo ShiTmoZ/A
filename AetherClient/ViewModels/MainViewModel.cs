@@ -37,13 +37,14 @@ namespace AetherClient.ViewModels
         private const int MaxLogEntries = 600;
 
         // Frozen Brushes for High-Performance UI rendering
-        private static readonly Brush TealTagBrush = CreateFrozenBrush("#22B8CF");
-        private static readonly Brush GoldTagBrush = CreateFrozenBrush("#FFD166");
-        private static readonly Brush EmeraldTagBrush = CreateFrozenBrush("#4ADE80");
-        private static readonly Brush CrimsonTagBrush = CreateFrozenBrush("#FF5C6A");
+        private static readonly Brush TealTagBrush = CreateFrozenBrush("#22D3EE");
+        private static readonly Brush GoldTagBrush = CreateFrozenBrush("#FBBF24");
+        private static readonly Brush EmeraldTagBrush = CreateFrozenBrush("#10B981");
+        private static readonly Brush CrimsonTagBrush = CreateFrozenBrush("#F43F5E");
         private static readonly Brush CyanTagBrush = CreateFrozenBrush("#38BDF8");
-        private static readonly Brush PrimaryTextBrush = CreateFrozenBrush("#F1F5F9");
-        private static readonly Brush SecondaryTextBrush = CreateFrozenBrush("#CBD5E1");
+        private static readonly Brush PurpleTagBrush = CreateFrozenBrush("#A855F7");
+        private static readonly Brush PrimaryTextBrush = CreateFrozenBrush("#F8FAFC");
+        private static readonly Brush SecondaryTextBrush = CreateFrozenBrush("#94A3B8");
 
         private readonly JobObjectManager _jobManager;
         private readonly AetherProcessService _processService;
@@ -66,8 +67,7 @@ namespace AetherClient.ViewModels
         [NotifyPropertyChangedFor(nameof(IsConnected))]
         [NotifyPropertyChangedFor(nameof(StatusBadgeText))]
         [NotifyPropertyChangedFor(nameof(PrimaryActionButtonText))]
-        [NotifyPropertyChangedFor(nameof(CompanionStatusTitle))]
-        [NotifyPropertyChangedFor(nameof(CompanionAuraDescription))]
+        [NotifyPropertyChangedFor(nameof(ConnectionStateSummary))]
         private TunnelConnectionState _currentState = TunnelConnectionState.Idle;
 
         [ObservableProperty]
@@ -76,16 +76,25 @@ namespace AetherClient.ViewModels
         private bool _isTunModeSelected = true;
 
         [ObservableProperty]
-        private string _companionSubtitle = "ELVEN MANA & HEARTH // MASQUE EDITION";
+        private ExitLocationMode _selectedExitLocation = ExitLocationMode.AutoAnycast;
 
         [ObservableProperty]
-        private string _gatewayPeer = "162.159.198.4:443";
+        private bool _isAutoAnycast = true;
+
+        [ObservableProperty]
+        private bool _isBypassIran;
+
+        [ObservableProperty]
+        private bool _isEuropeanTunnel;
+
+        [ObservableProperty]
+        private string _gatewayPeer = "162.159.198.86:443";
 
         [ObservableProperty]
         private string _routeDatacenter = "FRA (Frankfurt Core)";
 
         [ObservableProperty]
-        private string _latencyRtt = "175 ms";
+        private string _latencyRtt = "273 ms";
 
         [ObservableProperty]
         private string _localListeners = "127.0.0.1:1819 (SOCKS5) | :1820 (HTTP)";
@@ -114,7 +123,7 @@ namespace AetherClient.ViewModels
 
         public string ActiveRoutingDescription => IsTunModeSelected
             ? "Full-tunnel Wintun kernel driver active. Physical DNS locked to 1.1.1.1 (Anti-DPI)."
-            : "WinINET system HTTP/HTTPS proxy hooked to 127.0.0.1:1820 (Bypasses local loopback).";
+            : "WinINET system HTTP/HTTPS proxy hooked to 127.0.0.1:1820 (Local loopback).";
 
         public string StatusBadgeText => CurrentState switch
         {
@@ -132,20 +141,12 @@ namespace AetherClient.ViewModels
             _ => "ENGAGE MASQUE LINK"
         };
 
-        public string CompanionStatusTitle => CurrentState switch
+        public string ConnectionStateSummary => CurrentState switch
         {
-            TunnelConnectionState.Idle => "Hearth Warmth Restored",
-            TunnelConnectionState.Hunting => "Hunting Anycast Mesh...",
-            TunnelConnectionState.Connected => "Mana Shield Synchronized",
+            TunnelConnectionState.Idle => "Standby • Ready to engage Cloudflare MASQUE tunnel",
+            TunnelConnectionState.Hunting => "Probing Cloudflare Anycast edge mesh via parallel HTTP/2 CONNECT-IP...",
+            TunnelConnectionState.Connected => $"Protected via {GatewayPeer} ({RouteDatacenter}) • DNS Locked 1.1.1.1",
             _ => "Standby"
-        };
-
-        public string CompanionAuraDescription => CurrentState switch
-        {
-            TunnelConnectionState.Idle => "Aura breathing softly in standby mode. Ready to weave MASQUE HTTP/2 tunnel.",
-            TunnelConnectionState.Hunting => "Probing Cloudflare Anycast edge mesh via parallel HTTP/2 CONNECT-IP.",
-            TunnelConnectionState.Connected => "Secure zero-leak L3 tunnel locked. Traffic fully insulated against DPI filters.",
-            _ => "Aura resting."
         };
 
         private TunnelMode SelectedMode => IsTunModeSelected ? TunnelMode.TrueTun : TunnelMode.SystemProxy;
@@ -176,13 +177,14 @@ namespace AetherClient.ViewModels
                 if (CurrentState == TunnelConnectionState.Connected)
                 {
                     TimeSpan elapsed = DateTime.UtcNow - _connectedSinceUtc;
-                    CompanionSubtitle = $"ACTIVE LINK // {elapsed:hh\\:mm\\:ss} // {RouteDatacenter}";
+                    ConnectionStateSummary = $"ACTIVE LINK // {elapsed:hh\\:mm\\:ss} // {RouteDatacenter}";
                 }
             };
 
-            AppendLog("[CORE]", "Aether MASQUE Core v2.4 initialized. Ready for turbo mesh hunt.", TealTagBrush);
-            AppendLog("[THEME]", "Marcille Donato (Elven Mana & Hearth Edition) visual profile loaded.", GoldTagBrush);
-            AppendLog("[CONFIG]", "Default arguments: --masque --h2 -4 --turbo --quick-reconnect --http-proxy 127.0.0.1:1820", CyanTagBrush);
+            AppendLog("[CORE]", "Aether Cyber-Glass Engine initialized. Zero-orphan JobObject active.", TealTagBrush);
+            AppendLog("[ROUTING]", "True TUN (Wintun L3) active. DNS locked to 1.1.1.1 to neutralize 10.10.34.34 spoofing.", CyanTagBrush);
+            AppendLog("[EXIT]", "Location Mode: [Auto Anycast] (Lowest latency CF Anycast Edge)", EmeraldTagBrush);
+            UpdateActiveCommandPreview();
         }
 
         private static Brush CreateFrozenBrush(string hexColor)
@@ -190,6 +192,67 @@ namespace AetherClient.ViewModels
             var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexColor));
             brush.Freeze();
             return brush;
+        }
+
+        partial void OnIsAutoAnycastChanged(bool value)
+        {
+            if (value)
+            {
+                _isBypassIran = false;
+                _isEuropeanTunnel = false;
+                OnPropertyChanged(nameof(IsBypassIran));
+                OnPropertyChanged(nameof(IsEuropeanTunnel));
+                SelectedExitLocation = ExitLocationMode.AutoAnycast;
+                UpdateActiveCommandPreview();
+                AppendLog("[EXIT]", "Location Mode set to [Auto Anycast]: Lowest latency edge routing.", CyanTagBrush);
+            }
+        }
+
+        partial void OnIsBypassIranChanged(bool value)
+        {
+            if (value)
+            {
+                _isAutoAnycast = false;
+                _isEuropeanTunnel = false;
+                OnPropertyChanged(nameof(IsAutoAnycast));
+                OnPropertyChanged(nameof(IsEuropeanTunnel));
+                SelectedExitLocation = ExitLocationMode.BypassIran;
+                UpdateActiveCommandPreview();
+                AppendLog("[EXIT]", "Location Mode set to [Bypass Iran]: Refuses Iranian exit IPs (--exit-loc !IR).", GoldTagBrush);
+            }
+        }
+
+        partial void OnIsEuropeanTunnelChanged(bool value)
+        {
+            if (value)
+            {
+                _isAutoAnycast = false;
+                _isBypassIran = false;
+                OnPropertyChanged(nameof(IsAutoAnycast));
+                OnPropertyChanged(nameof(IsBypassIran));
+                SelectedExitLocation = ExitLocationMode.EuropeanTunnel;
+                UpdateActiveCommandPreview();
+                AppendLog("[EXIT]", "Location Mode set to [Europe Direct]: MASQUE-in-MASQUE (--mim) to Europe.", PurpleTagBrush);
+            }
+        }
+
+        partial void OnIsTunModeSelectedChanged(bool value)
+        {
+            if (value)
+            {
+                AppendLog("[ROUTING]", "Engine switched to [True TUN (Wintun)]: L3 packet driver + strict 1.1.1.1 DNS.", CyanTagBrush);
+            }
+            else
+            {
+                AppendLog("[ROUTING]", "Engine switched to [System Proxy]: WinINET HTTP/HTTPS proxy on 127.0.0.1:1820.", TealTagBrush);
+            }
+        }
+
+        private void UpdateActiveCommandPreview()
+        {
+            string proto = SelectedExitLocation == ExitLocationMode.EuropeanTunnel ? "--mim" : "--masque";
+            string exitLoc = SelectedExitLocation == ExitLocationMode.BypassIran ? "--exit-loc !IR " : "";
+            LastExecutedCommand = $"aether.exe {proto} --h2 -4 --turbo --quick-reconnect {exitLoc}--http-proxy 127.0.0.1:1820";
         }
 
         [RelayCommand]
@@ -257,21 +320,22 @@ namespace AetherClient.ViewModels
             _connectionCts = new CancellationTokenSource();
 
             string reconnectFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
-            LastExecutedCommand = $"aether.exe --masque --h2 -4 --turbo {reconnectFlag} --http-proxy 127.0.0.1:1820";
+            string proto = SelectedExitLocation == ExitLocationMode.EuropeanTunnel ? "--mim" : "--masque";
+            string exitLoc = SelectedExitLocation == ExitLocationMode.BypassIran ? "--exit-loc !IR " : "";
+            LastExecutedCommand = $"aether.exe {proto} --h2 -4 --turbo {reconnectFlag} {exitLoc}--http-proxy 127.0.0.1:1820";
 
             await RunOnUiThreadAsync(() =>
             {
                 CurrentState = TunnelConnectionState.Hunting;
                 StateChanged?.Invoke(ConnectionState.Hunting, SelectedMode);
-                CompanionSubtitle = "PROBING ANYCAST MESH // CONNECT-IP RFC 9298";
             });
 
-            AppendLog("[HUNT]", $"Engaging Anycast Turbo Hunter ({reconnectFlag})...", GoldTagBrush);
+            AppendLog("[HUNT]", $"Engaging Anycast Turbo Hunter ({proto} {reconnectFlag} {exitLoc})...", GoldTagBrush);
 
             bool started = await _processService.StartAsync(
                 forceFreshScan: forceFreshScan,
-                customPeer: null, // Always rely on Aether's proven internal hunter!
-                useForeignExit: false,
+                customPeer: null,
+                exitMode: SelectedExitLocation,
                 cancellationToken: _connectionCts.Token).ConfigureAwait(false);
 
             if (!started)
@@ -280,7 +344,6 @@ namespace AetherClient.ViewModels
                 {
                     CurrentState = TunnelConnectionState.Idle;
                     StateChanged?.Invoke(ConnectionState.Disconnected, SelectedMode);
-                    CompanionSubtitle = "CONNECTION FAILED // RETRY HUNT";
                 });
                 AppendLog("[FAIL]", "Could not initiate Aether process or proxy sockets timed out.", CrimsonTagBrush);
                 return;
@@ -315,7 +378,6 @@ namespace AetherClient.ViewModels
                 _uptimeTimer.Start();
                 CurrentState = TunnelConnectionState.Connected;
                 StateChanged?.Invoke(ConnectionState.Connected, SelectedMode);
-                CompanionSubtitle = $"PROTECTED VIA {GatewayPeer} // {RouteDatacenter}";
             });
 
             AppendLog("[LINK]", "MASQUE zero-leak tunnel fully armed and active.", EmeraldTagBrush);
@@ -329,7 +391,6 @@ namespace AetherClient.ViewModels
                 await RunOnUiThreadAsync(() =>
                 {
                     _uptimeTimer.Stop();
-                    CompanionSubtitle = "DISENGAGING MASQUE CORE...";
                 });
 
                 _tunManager.StopTun();
@@ -342,7 +403,6 @@ namespace AetherClient.ViewModels
                 {
                     CurrentState = TunnelConnectionState.Idle;
                     StateChanged?.Invoke(ConnectionState.Disconnected, SelectedMode);
-                    CompanionSubtitle = "ELVEN MANA & HEARTH // MASQUE EDITION";
                 });
                 AppendLog("[LINK]", "Tunnel disengaged cleanly. Adapters restored.", TealTagBrush);
             }
@@ -448,7 +508,6 @@ namespace AetherClient.ViewModels
                     _proxyManager.DisableProxy();
                     CurrentState = TunnelConnectionState.Idle;
                     StateChanged?.Invoke(ConnectionState.Disconnected, SelectedMode);
-                    CompanionSubtitle = "BACKEND DISCONNECTED // READY TO RECONNECT";
                     AppendLog("[WARN]", "Aether backend terminated unexpectedly.", CrimsonTagBrush);
                 }
             });
@@ -456,9 +515,10 @@ namespace AetherClient.ViewModels
 
         public void AppendLog(string tag, string message, Brush tagBrush, Brush? messageBrush = null)
         {
+            string time = DateTime.Now.ToString("HH:mm:ss");
             var entry = new TelemetryLogEntry
             {
-                Timestamp = DateTime.Now.ToString("HH:mm:ss"),
+                Timestamp = time,
                 Tag = tag,
                 Message = message,
                 TagBrush = tagBrush,

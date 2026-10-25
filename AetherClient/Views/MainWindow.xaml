@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:AetherClient.ViewModels"
         mc:Ignorable="d"
-        Title="Cloudflare WARP (MASQUE Edition) - Marcille Anime Edition"
-        Width="960" Height="680"
-        MinWidth="960" MinHeight="680"
+        Title="Cloudflare WARP (MASQUE Edition) - Fluent Cyber Edition"
+        Width="960" Height="650"
+        MinWidth="960" MinHeight="650"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -16,50 +16,50 @@
         Closing="Window_Closing">
 
     <Window.Resources>
-        <!-- COLOR SYSTEM: Marcille Donato (Dungeon Meshi) Warm Anime Fantasy Palette -->
-        <Color x:Key="CanvasDarkColor">#090E17</Color>
-        <Color x:Key="StageDarkColor">#0E1524</Color>
-        <Color x:Key="CardSurfaceColor">#131D30</Color>
-        <Color x:Key="CardElevatedColor">#1A273F</Color>
+        <!-- COLOR SYSTEM: Obsidian Fluent Cyber-Glass -->
+        <Color x:Key="CanvasDarkColor">#090C15</Color>
+        <Color x:Key="CardSurfaceColor">#101626</Color>
+        <Color x:Key="CardElevatedColor">#162035</Color>
+        <Color x:Key="BorderSubtleColor">#1D2A42</Color>
+        <Color x:Key="BorderGlassColor">#2A3C5E</Color>
 
         <!-- Accents -->
-        <Color x:Key="TealManaColor">#22B8CF</Color>
-        <Color x:Key="CyanGlowColor">#06B6D4</Color>
-        <Color x:Key="HearthGoldColor">#FFD166</Color>
-        <Color x:Key="AmberWarmColor">#F59E0B</Color>
-        <Color x:Key="ConnectedEmeraldColor">#4ADE80</Color>
-        <Color x:Key="PepperoniCrimsonColor">#FF5C6A</Color>
-        <Color x:Key="BorderSlateColor">#24334D</Color>
+        <Color x:Key="CyberCyanColor">#00D2FF</Color>
+        <Color x:Key="CyberIndigoColor">#6366F1</Color>
+        <Color x:Key="CyberVioletColor">#8B5CF6</Color>
+        <Color x:Key="ConnectedEmeraldColor">#10B981</Color>
+        <Color x:Key="AmberRadarColor">#F59E0B</Color>
+        <Color x:Key="AlertCrimsonColor">#EF4444</Color>
 
-        <!-- Solid & Alpha Brushes -->
+        <!-- Solid Brushes -->
         <SolidColorBrush x:Key="CanvasDarkBrush" Color="{StaticResource CanvasDarkColor}"/>
-        <SolidColorBrush x:Key="StageDarkBrush" Color="{StaticResource StageDarkColor}"/>
         <SolidColorBrush x:Key="CardSurfaceBrush" Color="{StaticResource CardSurfaceColor}"/>
         <SolidColorBrush x:Key="CardElevatedBrush" Color="{StaticResource CardElevatedColor}"/>
-        <SolidColorBrush x:Key="TealManaBrush" Color="{StaticResource TealManaColor}"/>
-        <SolidColorBrush x:Key="CyanGlowBrush" Color="{StaticResource CyanGlowColor}"/>
-        <SolidColorBrush x:Key="HearthGoldBrush" Color="{StaticResource HearthGoldColor}"/>
-        <SolidColorBrush x:Key="AmberWarmBrush" Color="{StaticResource AmberWarmColor}"/>
+        <SolidColorBrush x:Key="BorderSubtleBrush" Color="{StaticResource BorderSubtleColor}"/>
+        <SolidColorBrush x:Key="BorderGlassBrush" Color="{StaticResource BorderGlassColor}"/>
+        <SolidColorBrush x:Key="CyberCyanBrush" Color="{StaticResource CyberCyanColor}"/>
+        <SolidColorBrush x:Key="CyberIndigoBrush" Color="{StaticResource CyberIndigoColor}"/>
+        <SolidColorBrush x:Key="CyberVioletBrush" Color="{StaticResource CyberVioletColor}"/>
         <SolidColorBrush x:Key="ConnectedEmeraldBrush" Color="{StaticResource ConnectedEmeraldColor}"/>
-        <SolidColorBrush x:Key="PepperoniCrimsonBrush" Color="{StaticResource PepperoniCrimsonColor}"/>
-        <SolidColorBrush x:Key="BorderSlateBrush" Color="{StaticResource BorderSlateColor}"/>
+        <SolidColorBrush x:Key="AmberRadarBrush" Color="{StaticResource AmberRadarColor}"/>
+        <SolidColorBrush x:Key="AlertCrimsonBrush" Color="{StaticResource AlertCrimsonColor}"/>
 
         <!-- Text Brushes -->
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8"/>
         <SolidColorBrush x:Key="TextMutedBrush" Color="#64748B"/>
 
         <!-- Glow Effects -->
-        <DropShadowEffect x:Key="TealGlowEffect" Color="{StaticResource CyanGlowColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.55"/>
-        <DropShadowEffect x:Key="GoldGlowEffect" Color="{StaticResource AmberWarmColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.55"/>
-        <DropShadowEffect x:Key="EmeraldGlowEffect" Color="{StaticResource ConnectedEmeraldColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+        <DropShadowEffect x:Key="CyanGlowEffect" Color="{StaticResource CyberCyanColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.45"/>
+        <DropShadowEffect x:Key="EmeraldGlowEffect" Color="{StaticResource ConnectedEmeraldColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.5"/>
+        <DropShadowEffect x:Key="AmberGlowEffect" Color="{StaticResource AmberRadarColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.45"/>
 
-        <!-- Button Hover Animations -->
-        <Style x:Key="AnimeButtonStyle" TargetType="Button">
+        <!-- Button Style -->
+        <Style x:Key="FluentButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -85,6 +85,7 @@
             </Setter>
         </Style>
 
+        <!-- Window Control Buttons -->
         <Style x:Key="WindowControlBtnStyle" TargetType="Button">
             <Setter Property="Width" Value="34"/>
             <Setter Property="Height" Value="28"/>
@@ -120,7 +121,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="WnCloseBorder" Property="Background" Value="{StaticResource PepperoniCrimsonBrush}"/>
+                                <Setter TargetName="WnCloseBorder" Property="Background" Value="{StaticResource AlertCrimsonBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -129,524 +130,623 @@
         </Style>
     </Window.Resources>
 
-    <!-- Main Window Frame (With Rounded Outer Glass Border) -->
-    <Border CornerRadius="16"
-            Background="{StaticResource CanvasDarkBrush}"
-            BorderBrush="{StaticResource BorderSlateBrush}"
+    <!-- Outer Window Frame with Fluent Cyber Glass Border -->
+    <Border CornerRadius="14"
+            BorderBrush="{StaticResource BorderGlassBrush}"
             BorderThickness="1.2">
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#090C15" Offset="0.0" />
+                <GradientStop Color="#0E1322" Offset="0.5" />
+                <GradientStop Color="#141C30" Offset="1.0" />
+            </LinearGradientBrush>
+        </Border.Background>
+
         <Grid>
-            <Grid.ColumnDefinitions>
-                <!-- Left Column: Marcille Anime Art & Mana Aura Stage -->
-                <ColumnDefinition Width="340"/>
-                <!-- Right Column: Control Deck & Live Telemetry -->
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <!-- Row 0: Custom Window Title Bar -->
+                <RowDefinition Height="46"/>
+                <!-- Row 1: Telemetry Metric Cards Strip (HUD) -->
+                <RowDefinition Height="Auto"/>
+                <!-- Row 2: Main Workspace (Control Deck + Terminal) -->
+                <RowDefinition Height="*"/>
+                <!-- Row 3: Bottom Status Bar -->
+                <RowDefinition Height="28"/>
+            </Grid.RowDefinitions>
 
             <!-- ========================================================= -->
-            <!-- LEFT COLUMN: ANIME HERO SHOWCASE & MANA AURA STAGE        -->
+            <!-- ROW 0: WINDOW TITLE BAR (Draggable)                       -->
             <!-- ========================================================= -->
-            <Border Grid.Column="0"
-                    CornerRadius="16,0,0,16"
-                    Background="{StaticResource StageDarkBrush}"
-                    BorderBrush="{StaticResource BorderSlateBrush}"
-                    BorderThickness="0,0,1.2,0">
+            <Border Grid.Row="0"
+                    Background="Transparent"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                    Padding="16,0,12,0">
                 <Grid>
-                    <!-- Background Ambient Light Vignette -->
-                    <Border Background="#06121E" Opacity="0.6"/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Brand Geometric Shield -->
+                        <Path Data="M12,2L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,2Z"
+                              Fill="{StaticResource CyberCyanBrush}"
+                              Width="16" Height="16"
+                              Stretch="Uniform"
+                              Margin="0,0,10,0"/>
 
-                    <!-- 1. Anime Magic Rune Circles (Behind Character Art) -->
-                    <Canvas Width="300" Height="300" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,30,0,0">
-                        <Ellipse Width="300" Height="300"
-                                 Stroke="{StaticResource TealManaBrush}"
-                                 StrokeThickness="1.2"
-                                 StrokeDashArray="8 4 2 4"
-                                 Opacity="0.4"
-                                 RenderTransformOrigin="0.5,0.5">
-                            <Ellipse.RenderTransform>
-                                <RotateTransform x:Name="HeroRuneRotateTransform" Angle="0"/>
-                            </Ellipse.RenderTransform>
-                        </Ellipse>
-                        <Ellipse Width="250" Height="250" Canvas.Left="25" Canvas.Top="25"
-                                 Stroke="{StaticResource HearthGoldBrush}"
-                                 StrokeThickness="1"
-                                 StrokeDashArray="12 6"
-                                 Opacity="0.3"
-                                 RenderTransformOrigin="0.5,0.5">
-                            <Ellipse.RenderTransform>
-                                <RotateTransform x:Name="HeroInnerRuneRotateTransform" Angle="0"/>
-                            </Ellipse.RenderTransform>
-                        </Ellipse>
-                    </Canvas>
+                        <TextBlock Text="CLOUDFLARE WARP"
+                                   FontSize="13"
+                                   FontWeight="Black"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center"/>
 
-                    <Grid Margin="16,20,16,16">
-                        <Grid.RowDefinitions>
-                            <!-- Character Art Card -->
-                            <RowDefinition Height="310"/>
-                            <!-- Character Status / Aura Deck -->
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- HERO ART CARD: Marcille Character Display -->
-                        <Border Grid.Row="0"
-                                CornerRadius="14"
-                                Background="#0A0E17"
-                                BorderBrush="{StaticResource BorderSlateBrush}"
-                                BorderThickness="1.2"
-                                ClipToBounds="True">
-                            <Grid>
-                                <!-- The Anime Character Image (Loaded safely in C#) -->
-                                <Image x:Name="HeroCharacterImage"
-                                       Stretch="UniformToFill"
-                                       RenderOptions.BitmapScalingMode="HighQuality"/>
-
-                                <!-- Bottom Vignette Gradient: Blends Character smoothly into UI card -->
-                                <Border>
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#00000000" Offset="0.0"/>
-                                            <GradientStop Color="#00000000" Offset="0.55"/>
-                                            <GradientStop Color="#990E1524" Offset="0.82"/>
-                                            <GradientStop Color="#FF0E1524" Offset="1.0"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                </Border>
-
-                                <!-- Top Badges: Japanese Manga Tag & Edition -->
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0">
-                                    <Border Background="#CC090E17"
-                                            BorderBrush="{StaticResource HearthGoldBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="4"
-                                            Padding="7,3">
-                                        <TextBlock Text="✦ ダンジョン飯 // MARCILLE"
-                                                   FontSize="10"
-                                                   FontWeight="Bold"
-                                                   Foreground="{StaticResource HearthGoldBrush}"/>
-                                    </Border>
-                                </StackPanel>
-
-                                <!-- Bottom Overlay in Art Card: Character Name & Mana State -->
-                                <StackPanel VerticalAlignment="Bottom" Margin="12,0,12,12">
-                                    <TextBlock Text="Marcille Donato"
-                                               FontSize="18"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="{Binding CompanionSubtitle}"
-                                               FontSize="11"
-                                               Foreground="{StaticResource TealManaBrush}"
-                                               TextTrimming="CharacterEllipsis"/>
-                                </StackPanel>
-                            </Grid>
+                        <Border Margin="10,0,0,0"
+                                Background="#1A00D2FF"
+                                BorderBrush="{StaticResource CyberCyanBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="6,2">
+                            <TextBlock Text="MASQUE RFC 9298"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource CyberCyanBrush}"/>
                         </Border>
 
-                        <!-- MANA AURA STATUS CARD (Dynamic Animations & Telemetry) -->
-                        <Border Grid.Row="1"
-                                Margin="0,14,0,0"
-                                CornerRadius="12"
-                                Background="{StaticResource CardSurfaceBrush}"
-                                BorderBrush="{StaticResource BorderSlateBrush}"
-                                BorderThickness="1.2"
-                                Padding="14,12">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-
-                                <!-- Status Title & State Ring -->
-                                <Grid Grid.Row="0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Animated Aura Core Ring -->
-                                    <Grid Grid.Column="0" Width="36" Height="36" Margin="0,0,10,0">
-                                        <Ellipse x:Name="AuraOuterRing"
-                                                 Width="34" Height="34"
-                                                 Stroke="{StaticResource TealManaBrush}"
-                                                 StrokeThickness="2"
-                                                 RenderTransformOrigin="0.5,0.5">
-                                            <Ellipse.RenderTransform>
-                                                <ScaleTransform x:Name="AuraScaleTransform" ScaleX="1.0" ScaleY="1.0"/>
-                                            </Ellipse.RenderTransform>
-                                            <Ellipse.Effect>
-                                                <DropShadowEffect x:Name="AuraDropShadow" Color="{StaticResource CyanGlowColor}" BlurRadius="12" ShadowDepth="0"/>
-                                            </Ellipse.Effect>
-                                        </Ellipse>
-                                        <!-- Inner Radar Sweep -->
-                                        <Ellipse x:Name="RadarSweepEllipse"
-                                                 Width="24" Height="24"
-                                                 Stroke="{StaticResource HearthGoldBrush}"
-                                                 StrokeThickness="1.5"
-                                                 StrokeDashArray="3 3"
-                                                 RenderTransformOrigin="0.5,0.5">
-                                            <Ellipse.RenderTransform>
-                                                <RotateTransform x:Name="RadarRotateTransform" Angle="0"/>
-                                            </Ellipse.RenderTransform>
-                                        </Ellipse>
-                                    </Grid>
-
-                                    <!-- Status Title Text -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding CompanionStatusTitle}"
-                                                   FontSize="13"
-                                                   FontWeight="Bold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Text="{Binding StatusBadgeText}"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource HearthGoldBrush}"/>
-                                    </StackPanel>
-
-                                    <!-- Equalizer Bars for Connected State -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Height="16">
-                                        <Border x:Name="EqBar1" Width="3" Height="6" Margin="1,0" Background="{StaticResource ConnectedEmeraldBrush}" CornerRadius="1.5" VerticalAlignment="Bottom"/>
-                                        <Border x:Name="EqBar2" Width="3" Height="12" Margin="1,0" Background="{StaticResource ConnectedEmeraldBrush}" CornerRadius="1.5" VerticalAlignment="Bottom"/>
-                                        <Border x:Name="EqBar3" Width="3" Height="8" Margin="1,0" Background="{StaticResource ConnectedEmeraldBrush}" CornerRadius="1.5" VerticalAlignment="Bottom"/>
-                                        <Border x:Name="EqBar4" Width="3" Height="14" Margin="1,0" Background="{StaticResource ConnectedEmeraldBrush}" CornerRadius="1.5" VerticalAlignment="Bottom"/>
-                                        <Border x:Name="EqBar5" Width="3" Height="5" Margin="1,0" Background="{StaticResource ConnectedEmeraldBrush}" CornerRadius="1.5" VerticalAlignment="Bottom"/>
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- Aura Description Text -->
-                                <TextBlock Grid.Row="1"
-                                           Margin="0,8,0,8"
-                                           Text="{Binding CompanionAuraDescription}"
-                                           FontSize="11"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
-                                           TextWrapping="Wrap"
-                                           LineHeight="15"/>
-
-                                <!-- Routing Protocol Badge -->
-                                <Border Grid.Row="2"
-                                        VerticalAlignment="Bottom"
-                                        Background="#0A0E17"
-                                        BorderBrush="{StaticResource BorderSlateBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="6"
-                                        Padding="8,5">
-                                    <TextBlock Text="{Binding ActiveRoutingDescription}"
-                                               FontSize="10"
-                                               Foreground="{StaticResource TextMutedBrush}"
-                                               TextWrapping="Wrap"/>
-                                </Border>
-                            </Grid>
+                        <Border Margin="6,0,0,0"
+                                Background="#1A6366F1"
+                                BorderBrush="{StaticResource CyberIndigoBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="6,2">
+                            <TextBlock Text="FLUENT CYBER EDITION"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource CyberIndigoBrush}"/>
                         </Border>
-                    </Grid>
+                    </StackPanel>
+
+                    <!-- Active CLI Command Preview Pill -->
+                    <Border HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#090E18"
+                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,3"
+                            MaxWidth="400">
+                        <TextBlock Text="{Binding LastExecutedCommand}"
+                                   FontFamily="Consolas"
+                                   FontSize="10"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </Border>
+
+                    <!-- Window Control Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Style="{StaticResource WindowControlBtnStyle}" Click="MinimizeButton_Click">
+                            <TextBlock Text="—" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </Button>
+                        <Button Style="{StaticResource WindowCloseBtnStyle}" Click="CloseButton_Click" Margin="4,0,0,0">
+                            <TextBlock Text="✕" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
 
             <!-- ========================================================= -->
-            <!-- RIGHT COLUMN: CONTROL DECK, TELEMETRY & TERMINAL CONSOLE  -->
+            <!-- ROW 1: TELEMETRY METRIC HUD STRIP                         -->
             <!-- ========================================================= -->
-            <Grid Grid.Column="1">
-                <Grid.RowDefinitions>
-                    <!-- Row 0: Custom Window Title Bar -->
-                    <RowDefinition Height="46"/>
-                    <!-- Row 1: Mode Switcher & Primary Action Deck -->
-                    <RowDefinition Height="Auto"/>
-                    <!-- Row 2: Gateway Telemetry Metric Cards -->
-                    <RowDefinition Height="Auto"/>
-                    <!-- Row 3: Terminal Console -->
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <Grid Grid.Row="1" Margin="16,0,16,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                <!-- ROW 0: WINDOW TITLE BAR (Draggable) -->
-                <Border Grid.Row="0"
-                        Background="Transparent"
-                        MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
-                        Padding="16,0,10,0">
-                    <Grid>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="CLOUDFLARE WARP"
-                                       FontSize="13"
-                                       FontWeight="Black"
-                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                       VerticalAlignment="Center"/>
-                            <Border Margin="8,0,0,0"
-                                    Background="#2206B6D4"
-                                    BorderBrush="{StaticResource TealManaBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Padding="6,2">
-                                <TextBlock Text="MASQUE RFC 9298"
-                                           FontSize="10"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TealManaBrush}"/>
-                            </Border>
-                            <Border Margin="6,0,0,0"
-                                    Background="#22FFD166"
-                                    BorderBrush="{StaticResource HearthGoldBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Padding="6,2">
-                                <TextBlock Text="エルフの魔力 // TURBO MESH"
-                                           FontSize="10"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource HearthGoldBrush}"/>
-                            </Border>
-                        </StackPanel>
-
-                        <!-- Window Control Buttons (Minimize & Close) -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button Style="{StaticResource WindowControlBtnStyle}" Click="MinimizeButton_Click">
-                                <TextBlock Text="—" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
-                            </Button>
-                            <Button Style="{StaticResource WindowCloseBtnStyle}" Click="CloseButton_Click" Margin="4,0,0,0">
-                                <TextBlock Text="✕" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <!-- ROW 1: MODE SWITCHERS & PRIMARY ACTION DECK -->
-                <Border Grid.Row="1"
-                        Margin="16,0,16,10"
+                <!-- Metric 1: Status -->
+                <Border Grid.Column="0"
+                        Margin="0,0,5,0"
                         Background="{StaticResource CardSurfaceBrush}"
-                        BorderBrush="{StaticResource BorderSlateBrush}"
-                        BorderThickness="1.2"
-                        CornerRadius="12"
-                        Padding="14,12">
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12,8">
                     <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                        <!-- Top: Mode Toggle Selector Pills -->
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- True TUN Toggle Button -->
-                            <RadioButton Grid.Column="0"
-                                         Margin="0,0,5,0"
-                                         IsChecked="{Binding IsTunModeSelected, Mode=TwoWay}"
-                                         GroupName="ProxyModeSelection"
-                                         Cursor="Hand">
-                                <RadioButton.Template>
-                                    <ControlTemplate TargetType="RadioButton">
-                                        <Border x:Name="PillBorder"
-                                                Background="#0F172A"
-                                                BorderBrush="{StaticResource BorderSlateBrush}"
-                                                BorderThickness="1.2"
-                                                CornerRadius="8"
-                                                Padding="10,8">
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <TextBlock Text="🛡️" FontSize="12" Margin="0,0,6,0"/>
-                                                <TextBlock Text="True TUN (Wintun L3)"
-                                                           FontSize="12"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{StaticResource TextSecondaryBrush}"/>
-                                            </StackPanel>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="PillBorder" Property="Background" Value="#2206B6D4"/>
-                                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="{StaticResource TealManaBrush}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </RadioButton.Template>
-                            </RadioButton>
-
-                            <!-- System Proxy Toggle Button -->
-                            <RadioButton Grid.Column="1"
-                                         Margin="5,0,0,0"
-                                         IsChecked="{Binding IsSystemProxySelected, Mode=TwoWay}"
-                                         GroupName="ProxyModeSelection"
-                                         Cursor="Hand">
-                                <RadioButton.Template>
-                                    <ControlTemplate TargetType="RadioButton">
-                                        <Border x:Name="PillBorder"
-                                                Background="#0F172A"
-                                                BorderBrush="{StaticResource BorderSlateBrush}"
-                                                BorderThickness="1.2"
-                                                CornerRadius="8"
-                                                Padding="10,8">
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <TextBlock Text="🌐" FontSize="12" Margin="0,0,6,0"/>
-                                                <TextBlock Text="System Proxy (1820)"
-                                                           FontSize="12"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{StaticResource TextSecondaryBrush}"/>
-                                            </StackPanel>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="PillBorder" Property="Background" Value="#22FFD166"/>
-                                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="{StaticResource HearthGoldBrush}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </RadioButton.Template>
-                            </RadioButton>
+                        <!-- Glowing Status Ring -->
+                        <Grid Grid.Column="0" Width="26" Height="26" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Ellipse x:Name="AuraOuterRing"
+                                     Width="24" Height="24"
+                                     Stroke="{StaticResource CyberCyanBrush}"
+                                     StrokeThickness="2"
+                                     RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <ScaleTransform x:Name="AuraScaleTransform" ScaleX="1.0" ScaleY="1.0"/>
+                                </Ellipse.RenderTransform>
+                                <Ellipse.Effect>
+                                    <DropShadowEffect x:Name="AuraDropShadow" Color="{StaticResource CyberCyanColor}" BlurRadius="12" ShadowDepth="0"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <Ellipse x:Name="RadarSweepEllipse"
+                                     Width="14" Height="14"
+                                     Stroke="{StaticResource AmberRadarBrush}"
+                                     StrokeThickness="1.5"
+                                     StrokeDashArray="2 2"
+                                     RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <RotateTransform x:Name="RadarRotateTransform" Angle="0"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
                         </Grid>
 
-                        <!-- Bottom: Action Buttons (Engage Masque + Hunt Next Edge) -->
-                        <Grid Grid.Row="1" Margin="0,12,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2.5*"/>
-                                <ColumnDefinition Width="1.2*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- Primary Action Button: Engage Link -->
-                            <Button Grid.Column="0"
-                                    Margin="0,0,8,0"
-                                    Height="42"
-                                    Style="{StaticResource AnimeButtonStyle}"
-                                    Background="{StaticResource TealManaBrush}"
-                                    BorderThickness="0"
-                                    Command="{Binding ToggleTunnelCommand}"
-                                    Effect="{StaticResource TealGlowEffect}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⚡" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding PrimaryActionButtonText}"
-                                               FontSize="13"
-                                               FontWeight="Bold"
-                                               Foreground="#090E17"
-                                               VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
-
-                            <!-- Re-Scan / Hunt Next Edge Button -->
-                            <Button Grid.Column="1"
-                                    Height="42"
-                                    Style="{StaticResource AnimeButtonStyle}"
-                                    Background="{StaticResource CardElevatedBrush}"
-                                    BorderBrush="{StaticResource HearthGoldBrush}"
-                                    BorderThickness="1.2"
-                                    Command="{Binding HuntNextEdgeCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="🎯" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Hunt Edge"
-                                               FontSize="12"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource HearthGoldBrush}"
-                                               VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <!-- ROW 2: ACTIVE GATEWAY TELEMETRY METRIC CARDS -->
-                <Grid Grid.Row="2" Margin="16,0,16,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Metric 1: Status -->
-                    <Border Grid.Column="0"
-                            Margin="0,0,4,0"
-                            Background="{StaticResource CardSurfaceBrush}"
-                            BorderBrush="{StaticResource BorderSlateBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="10,8">
-                        <StackPanel>
-                            <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="TUNNEL STATE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
                             <TextBlock Text="{Binding StatusBadgeText}"
                                        FontSize="12"
                                        FontWeight="Bold"
-                                       Foreground="{StaticResource TealManaBrush}"
+                                       Foreground="{StaticResource CyberCyanBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-                    </Border>
+                    </Grid>
+                </Border>
 
-                    <!-- Metric 2: Gateway Peer -->
-                    <Border Grid.Column="1"
-                            Margin="4,0,4,0"
+                <!-- Metric 2: Gateway Peer -->
+                <Border Grid.Column="1"
+                        Margin="5,0,5,0"
+                        Background="{StaticResource CardSurfaceBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12,8">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="GATEWAY PEER" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock Text="{Binding GatewayPeer}"
+                                   FontFamily="Consolas"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Margin="0,2,0,0"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Metric 3: Datacenter Route -->
+                <Border Grid.Column="2"
+                        Margin="5,0,5,0"
+                        Background="{StaticResource CardSurfaceBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12,8">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="EXIT LOCATION / ROUTE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock Text="{Binding RouteDatacenter}"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource AmberRadarBrush}"
+                                   Margin="0,2,0,0"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Metric 4: Mesh Latency RTT -->
+                <Border Grid.Column="3"
+                        Margin="5,0,0,0"
+                        Background="{StaticResource CardSurfaceBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12,8">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="MESH RTT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock Text="{Binding LatencyRtt}"
+                                   FontFamily="Consolas"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource ConnectedEmeraldBrush}"
+                                   Margin="0,2,0,0"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ========================================================= -->
+            <!-- ROW 2: MAIN WORKSPACE (CONTROL DECK + TERMINAL)           -->
+            <!-- ========================================================= -->
+            <Grid Grid.Row="2" Margin="16,0,16,10">
+                <Grid.ColumnDefinitions>
+                    <!-- Left: Control Deck (Width 360) -->
+                    <ColumnDefinition Width="360"/>
+                    <!-- Gap -->
+                    <ColumnDefinition Width="14"/>
+                    <!-- Right: Terminal Telemetry Console (Width *) -->
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ========================================================= -->
+                <!-- LEFT COLUMN: CONTROL DECK                                 -->
+                <!-- ========================================================= -->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <!-- Location & Exit Profile -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- Routing Architecture -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- Action Buttons -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- Security Telemetry Card -->
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- CARD 1: EXIT LOCATION & GEO FILTER -->
+                    <Border Grid.Row="0"
+                            Margin="0,0,0,10"
                             Background="{StaticResource CardSurfaceBrush}"
-                            BorderBrush="{StaticResource BorderSlateBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="10,8">
+                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                            BorderThickness="1.2"
+                            CornerRadius="10"
+                            Padding="12,10">
                         <StackPanel>
-                            <TextBlock Text="GATEWAY PEER" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
-                            <TextBlock Text="{Binding GatewayPeer}"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                       Margin="0,2,0,0"
-                                       TextTrimming="CharacterEllipsis"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="🌐" FontSize="11" Margin="0,0,6,0"/>
+                                <TextBlock Text="EXIT LOCATION &amp; GEO FILTER"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                            </StackPanel>
+
+                            <!-- Option 1: Auto Anycast -->
+                            <RadioButton Margin="0,0,0,6"
+                                         IsChecked="{Binding IsAutoAnycast, Mode=TwoWay}"
+                                         GroupName="ExitLocationSelection"
+                                         Cursor="Hand">
+                                <RadioButton.Template>
+                                    <ControlTemplate TargetType="RadioButton">
+                                        <Border x:Name="OptBorder"
+                                                Background="#0C1220"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="7"
+                                                Padding="10,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="⚡ Auto Anycast"
+                                                               FontSize="11"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <TextBlock Text="Lowest RTT Cloudflare edge mesh"
+                                                               FontSize="10"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               Margin="0,1,0,0"/>
+                                                </StackPanel>
+                                                <Border Grid.Column="1"
+                                                        Background="#1A00D2FF"
+                                                        CornerRadius="4"
+                                                        Padding="5,1"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="FASTEST" FontSize="8" FontWeight="Bold" Foreground="{StaticResource CyberCyanBrush}"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="OptBorder" Property="Background" Value="#1A00D2FF"/>
+                                                <Setter TargetName="OptBorder" Property="BorderBrush" Value="{StaticResource CyberCyanBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </RadioButton.Template>
+                            </RadioButton>
+
+                            <!-- Option 2: Bypass Iran -->
+                            <RadioButton Margin="0,0,0,6"
+                                         IsChecked="{Binding IsBypassIran, Mode=TwoWay}"
+                                         GroupName="ExitLocationSelection"
+                                         Cursor="Hand">
+                                <RadioButton.Template>
+                                    <ControlTemplate TargetType="RadioButton">
+                                        <Border x:Name="OptBorder"
+                                                Background="#0C1220"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="7"
+                                                Padding="10,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="🌍 Bypass Iran (--exit-loc !IR)"
+                                                               FontSize="11"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <TextBlock Text="Rejects Iranian geo-mapped exit nodes"
+                                                               FontSize="10"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               Margin="0,1,0,0"/>
+                                                </StackPanel>
+                                                <Border Grid.Column="1"
+                                                        Background="#1AF59E0B"
+                                                        CornerRadius="4"
+                                                        Padding="5,1"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="GEO SAFE" FontSize="8" FontWeight="Bold" Foreground="{StaticResource AmberRadarBrush}"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="OptBorder" Property="Background" Value="#1AF59E0B"/>
+                                                <Setter TargetName="OptBorder" Property="BorderBrush" Value="{StaticResource AmberRadarBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </RadioButton.Template>
+                            </RadioButton>
+
+                            <!-- Option 3: Europe Direct -->
+                            <RadioButton Margin="0"
+                                         IsChecked="{Binding IsEuropeanTunnel, Mode=TwoWay}"
+                                         GroupName="ExitLocationSelection"
+                                         Cursor="Hand">
+                                <RadioButton.Template>
+                                    <ControlTemplate TargetType="RadioButton">
+                                        <Border x:Name="OptBorder"
+                                                Background="#0C1220"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="7"
+                                                Padding="10,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="🇪🇺 Europe Direct (--mim)"
+                                                               FontSize="11"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <TextBlock Text="Dual-hop MASQUE tunnel to Frankfurt / AMS"
+                                                               FontSize="10"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               Margin="0,1,0,0"/>
+                                                </StackPanel>
+                                                <Border Grid.Column="1"
+                                                        Background="#1A8B5CF6"
+                                                        CornerRadius="4"
+                                                        Padding="5,1"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="NESTED" FontSize="8" FontWeight="Bold" Foreground="{StaticResource CyberVioletBrush}"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="OptBorder" Property="Background" Value="#1A8B5CF6"/>
+                                                <Setter TargetName="OptBorder" Property="BorderBrush" Value="{StaticResource CyberVioletBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </RadioButton.Template>
+                            </RadioButton>
                         </StackPanel>
                     </Border>
 
-                    <!-- Metric 3: Datacenter Route -->
-                    <Border Grid.Column="2"
-                            Margin="4,0,4,0"
+                    <!-- CARD 2: ROUTING ENGINE -->
+                    <Border Grid.Row="1"
+                            Margin="0,0,0,10"
                             Background="{StaticResource CardSurfaceBrush}"
-                            BorderBrush="{StaticResource BorderSlateBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="10,8">
+                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                            BorderThickness="1.2"
+                            CornerRadius="10"
+                            Padding="12,10">
                         <StackPanel>
-                            <TextBlock Text="EXIT ROUTE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
-                            <TextBlock Text="{Binding RouteDatacenter}"
-                                       FontSize="12"
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="🛡️" FontSize="11" Margin="0,0,6,0"/>
+                                <TextBlock Text="ROUTING ENGINE"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                            </StackPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- True TUN Radio -->
+                                <RadioButton Grid.Column="0"
+                                             Margin="0,0,4,0"
+                                             IsChecked="{Binding IsTunModeSelected, Mode=TwoWay}"
+                                             GroupName="ProxyModeSelection"
+                                             Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="PillBorder"
+                                                    Background="#0C1220"
+                                                    BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="7"
+                                                    Padding="8,7">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <TextBlock Text="🛡️" FontSize="11" Margin="0,0,5,0"/>
+                                                    <TextBlock Text="True TUN (L3)"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="PillBorder" Property="Background" Value="#1A00D2FF"/>
+                                                    <Setter TargetName="PillBorder" Property="BorderBrush" Value="{StaticResource CyberCyanBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+
+                                <!-- System Proxy Radio -->
+                                <RadioButton Grid.Column="1"
+                                             Margin="4,0,0,0"
+                                             IsChecked="{Binding IsSystemProxySelected, Mode=TwoWay}"
+                                             GroupName="ProxyModeSelection"
+                                             Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="PillBorder"
+                                                    Background="#0C1220"
+                                                    BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="7"
+                                                    Padding="8,7">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <TextBlock Text="🌐" FontSize="11" Margin="0,0,5,0"/>
+                                                    <TextBlock Text="System Proxy"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="PillBorder" Property="Background" Value="#1A6366F1"/>
+                                                    <Setter TargetName="PillBorder" Property="BorderBrush" Value="{StaticResource CyberIndigoBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+                            </Grid>
+
+                            <TextBlock Text="{Binding ActiveRoutingDescription}"
+                                       FontSize="10"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,7,0,0"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- CARD 3: ACTION BUTTONS -->
+                    <Grid Grid.Row="2" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2.3*"/>
+                            <ColumnDefinition Width="1.2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Primary Toggle Action Button -->
+                        <Button Grid.Column="0"
+                                Margin="0,0,8,0"
+                                Height="42"
+                                Style="{StaticResource FluentButtonStyle}"
+                                Background="{StaticResource CyberCyanBrush}"
+                                BorderThickness="0"
+                                Command="{Binding ToggleTunnelCommand}"
+                                Effect="{StaticResource CyanGlowEffect}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚡" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding PrimaryActionButtonText}"
+                                           FontSize="12"
+                                           FontWeight="Bold"
+                                           Foreground="#090C15"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Secondary Re-Hunt Edge Button -->
+                        <Button Grid.Column="1"
+                                Height="42"
+                                Style="{StaticResource FluentButtonStyle}"
+                                Background="{StaticResource CardElevatedBrush}"
+                                BorderBrush="{StaticResource AmberRadarBrush}"
+                                BorderThickness="1.2"
+                                Command="{Binding HuntNextEdgeCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🎯" FontSize="11" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Hunt Edge"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource AmberRadarBrush}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- CARD 4: SECURITY & INTEGRITY MINI-HUD -->
+                    <Border Grid.Row="3"
+                            Background="{StaticResource CardSurfaceBrush}"
+                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="12,8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0"
+                                       Text="SECURITY &amp; PROCESS INTEGRITY"
+                                       FontSize="9"
                                        FontWeight="Bold"
-                                       Foreground="{StaticResource HearthGoldBrush}"
-                                       Margin="0,2,0,0"
-                                       TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
-                    </Border>
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,0,0,6"/>
 
-                    <!-- Metric 4: Latency RTT -->
-                    <Border Grid.Column="3"
-                            Margin="4,0,0,0"
-                            Background="{StaticResource CardSurfaceBrush}"
-                            BorderBrush="{StaticResource BorderSlateBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="10,8">
-                        <StackPanel>
-                            <TextBlock Text="LATENCY RTT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
-                            <TextBlock Text="{Binding LatencyRtt}"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource ConnectedEmeraldBrush}"
-                                       Margin="0,2,0,0"
-                                       TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
+                            <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                                <Grid Margin="0,0,0,4">
+                                    <TextBlock Text="DNS Spoof Shield" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="LOCKED 1.1.1.1" FontSize="10" FontWeight="Bold" Foreground="{StaticResource ConnectedEmeraldBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,4">
+                                    <TextBlock Text="DPI Resistance" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="HTTP/2 CONNECT-IP" FontSize="10" FontWeight="Bold" Foreground="{StaticResource CyberCyanBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid>
+                                    <TextBlock Text="Process Guardian" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="JOB OBJECT ACTIVE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource CyberIndigoBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
 
-                <!-- ROW 3: LIVE TERMINAL TELEMETRY CONSOLE -->
-                <Border Grid.Row="3"
-                        Margin="16,0,16,16"
-                        Background="#080C14"
-                        BorderBrush="{StaticResource BorderSlateBrush}"
+                <!-- ========================================================= -->
+                <!-- RIGHT COLUMN: LIVE TERMINAL TELEMETRY CONSOLE             -->
+                <!-- ========================================================= -->
+                <Border Grid.Column="2"
+                        Background="#070A12"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
                         BorderThickness="1.2"
                         CornerRadius="10">
                     <Grid>
                         <Grid.RowDefinitions>
                             <!-- Terminal Header -->
-                            <RowDefinition Height="34"/>
-                            <!-- Terminal Monospace Log List -->
+                            <RowDefinition Height="36"/>
+                            <!-- Terminal Monospace Log Stream -->
                             <RowDefinition Height="*"/>
+                            <!-- Terminal Footer Endpoints -->
+                            <RowDefinition Height="26"/>
                         </Grid.RowDefinitions>
 
                         <!-- Terminal Header Bar -->
                         <Border Grid.Row="0"
-                                Background="#0D1420"
-                                BorderBrush="{StaticResource BorderSlateBrush}"
+                                Background="#0D1322"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
                                 BorderThickness="0,0,0,1"
                                 CornerRadius="10,10,0,0"
                                 Padding="12,0">
                             <Grid>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="• TERMINAL TELEMETRY"
+                                    <TextBlock Text="• LIVE TELEMETRY STREAM"
                                                FontSize="11"
                                                FontWeight="Bold"
                                                Foreground="{StaticResource TextSecondaryBrush}"
@@ -658,7 +758,7 @@
                                         <TextBlock Text="{Binding LogCountBadgeText}"
                                                    FontSize="9"
                                                    FontWeight="SemiBold"
-                                                   Foreground="{StaticResource HearthGoldBrush}"/>
+                                                   Foreground="{StaticResource AmberRadarBrush}"/>
                                     </Border>
                                 </StackPanel>
 
@@ -667,18 +767,18 @@
                                     <Button Height="22"
                                             Padding="8,0"
                                             Margin="0,0,6,0"
-                                            Style="{StaticResource AnimeButtonStyle}"
+                                            Style="{StaticResource FluentButtonStyle}"
                                             Background="#1E293B"
                                             BorderThickness="0"
                                             Command="{Binding CopyLogsCommand}">
                                         <TextBlock Text="{Binding CopyButtonText}"
                                                    FontSize="10"
                                                    FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TealManaBrush}"/>
+                                                   Foreground="{StaticResource CyberCyanBrush}"/>
                                     </Button>
                                     <Button Height="22"
                                             Padding="8,0"
-                                            Style="{StaticResource AnimeButtonStyle}"
+                                            Style="{StaticResource FluentButtonStyle}"
                                             Background="#1E293B"
                                             BorderThickness="0"
                                             Command="{Binding ClearLogsCommand}">
@@ -691,13 +791,13 @@
                             </Grid>
                         </Border>
 
-                        <!-- Terminal Log Stream -->
+                        <!-- Terminal Monospace Log Stream -->
                         <ListBox Grid.Row="1"
                                  x:Name="TelemetryLogListBox"
                                  ItemsSource="{Binding Logs}"
                                  Background="Transparent"
                                  BorderThickness="0"
-                                 Padding="8,6"
+                                 Padding="10,6"
                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListBox.ItemContainerStyle>
@@ -737,9 +837,49 @@
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
+
+                        <!-- Terminal Footer Endpoints -->
+                        <Border Grid.Row="2"
+                                Background="#0A0E18"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="0,1,0,0"
+                                CornerRadius="0,0,10,10"
+                                Padding="10,0">
+                            <Grid VerticalAlignment="Center">
+                                <TextBlock Text="{Binding LocalListeners}"
+                                           FontFamily="Consolas"
+                                           FontSize="10"
+                                           Foreground="{StaticResource TextMutedBrush}"/>
+                                <TextBlock Text="RFC 9298 MASQUE"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource CyberCyanBrush}"
+                                           HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
                     </Grid>
                 </Border>
             </Grid>
+
+            <!-- ========================================================= -->
+            <!-- ROW 3: BOTTOM STATUS BAR                                  -->
+            <!-- ========================================================= -->
+            <Border Grid.Row="3"
+                    Background="#070911"
+                    BorderBrush="{StaticResource BorderSubtleBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,0">
+                <Grid VerticalAlignment="Center">
+                    <TextBlock Text="AETHER CORE v2.4.0 • Zero-Leak Wintun L3 • Clean IP Management"
+                               FontSize="10"
+                               Foreground="{StaticResource TextMutedBrush}"/>
+                    <TextBlock Text="DNS: 1.1.1.1 [Strict Netsh Clamped]"
+                               FontSize="10"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ConnectedEmeraldBrush}"
+                               HorizontalAlignment="Right"/>
+                </Grid>
+            </Border>
         </Grid>
     </Border>
 </Window>

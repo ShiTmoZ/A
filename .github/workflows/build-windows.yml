@@ -91,17 +91,20 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           name: Cloudflare WARP (MASQUE Edition) ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           body: |
-            ### Cloudflare WARP (MASQUE Edition) — Marcille Hero Anime Edition
+            ### Cloudflare WARP (MASQUE Edition) — Fluent Cyber-Glass Edition
             Zero-bloat, production-grade desktop client for Cloudflare MASQUE (RFC 9298) HTTP/2 censorship bypass on DPI-restricted networks (TCI / MCI / Irancell).
 
-            #### What's New:
-            - **Marcille Hero Anime Stage**: Full-size character artwork integration with dual counter-rotating magical rune circles and smooth vignette gradient fade.
-            - **Zero Text Clipping**: Responsive layout with proper padding, eliminating clipped status texts across all screen resolutions.
-            - **Anime Mana Aura HUD**: State-reactive breathing aura, high-speed amber radar sweep during Anycast hunting, and emerald mana shield with equalizer telemetry bars.
-            - **Live Monospace Console**: 1-click clipboard copy with visual feedback ("Copied!") and clear button.
-            - **Anycast Turbo Mesh Engine**: Parallel multi-threaded hunter (--turbo) for reliable MASQUE connection in Iran.
+            #### What's New in this Release:
+            - **Fluent Cyber-Glass UI**: Clean, authentic Windows 11 obsidian glass interface with zero cartoon stickers, specular highlights, and zero text clipping.
+            - **3-State Exit Location & Geo Filter**:
+              - ⚡ `Auto Anycast`: Ultra-low latency Cloudflare edge mesh auto-probe.
+              - 🌍 `Bypass Iran (--exit-loc !IR)`: Automatically rejects Iranian geo-mapped exit nodes, guaranteeing an external exit IP.
+              - 🇪🇺 `Europe Direct (--mim)`: Dual-hop nested MASQUE-in-MASQUE tunnel directly to Frankfurt and Amsterdam gateways.
+            - **Live Monospace Telemetry Console**: 1-click clipboard copy with visual feedback ("Copied!") and console clear.
+            - **Anycast Turbo Mesh Engine**: Parallel multi-threaded hunter (`--turbo`) for reliable MASQUE connection in Iran.
+            - **Zero-Orphan Process Management**: Native Windows Job Object guarantees complete cleanup on close or unexpected exit.
             - **Dual Routing Architecture**:
-              - *True TUN (Wintun)*: L3 kernel adapter with netsh DNS locked to 1.1.1.1 to neutralize 10.10.34.34 DNS poisoning.
+              - *True TUN (Wintun L3)*: L3 kernel adapter with netsh DNS locked to 1.1.1.1 to neutralize 10.10.34.34 DNS poisoning.
               - *System Proxy*: WinINET local proxy on 127.0.0.1:1820.
           files: .\AetherClient-Windows-x64.zip
         env:

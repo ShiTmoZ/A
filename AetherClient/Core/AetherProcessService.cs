@@ -63,12 +63,13 @@ public sealed partial class AetherProcessService : IDisposable
     /// <summary>
     /// Starts the underlying MASQUE HTTP/2 core engine.
     /// If customPeer is provided, locks the edge peer and connects directly.
-    /// If useForeignExit is enabled, launches in MASQUE-in-MASQUE (--mim) mode for Non-IR exit location.
+    /// If exitMode is EuropeanTunnel, launches in MASQUE-in-MASQUE (--mim) mode.
+    /// If exitMode is BypassIran, appends --exit-loc !IR to reject Iranian exit nodes.
     /// </summary>
     public async Task<bool> StartAsync(
         bool forceFreshScan = false,
         string? customPeer = null,
-        bool useForeignExit = false,
+        ExitLocationMode exitMode = ExitLocationMode.AutoAnycast,
         CancellationToken cancellationToken = default)
     {
         await _lifecycleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -92,13 +93,14 @@ public sealed partial class AetherProcessService : IDisposable
             bool isCustomPeer = !string.IsNullOrWhiteSpace(customPeer) &&
                                 !customPeer.Equals("Auto", StringComparison.OrdinalIgnoreCase);
 
-            string proto = useForeignExit ? "--mim" : "--masque";
+            bool isMim = exitMode == ExitLocationMode.EuropeanTunnel;
+            string proto = isMim ? "--mim" : "--masque";
             string modeArgs;
 
             if (isCustomPeer)
             {
                 string peer = customPeer!.Trim();
-                string peerFlag = useForeignExit ? "--mim-outer" : "--peer";
+                string peerFlag = isMim ? "--mim-outer" : "--peer";
                 modeArgs = $"{peerFlag} {peer} --quick-reconnect";
                 ActivePeer = peer;
                 EmitLog($"[RADAR-LOCK] Engaging direct Anycast peer lock -> {peer} (Proto: {proto})");
@@ -111,7 +113,8 @@ public sealed partial class AetherProcessService : IDisposable
                 EmitLog($"[TURBO-MESH] Engaging Cloudflare Anycast Turbo auto-probe ({proto} {modeArgs})");
             }
 
-            string arguments = $"{proto} --h2 -4 {modeArgs} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
+            string exitLocArg = exitMode == ExitLocationMode.BypassIran ? "--exit-loc !IR " : "";
+            string arguments = $"{proto} --h2 -4 {modeArgs} {exitLocArg}--http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
             EmitLog($"[EXEC] {ExecutableName} {arguments}");
 
             var psi = new ProcessStartInfo
