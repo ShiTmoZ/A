@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:models="clr-namespace:AetherClient.Models"
         mc:Ignorable="d"
-        Title="Aether MASQUE Client"
+        Title="Cloudflare WARP // MASQUE Edition"
         Width="460"
         SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
@@ -167,7 +167,7 @@
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center" />
                     </Border>
-                    <TextBlock Text="AETHER" FontWeight="ExtraBold" FontSize="14.5" Foreground="#F8FAFC" VerticalAlignment="Center" />
+                    <TextBlock Text="WARP" FontWeight="ExtraBold" FontSize="14.5" Foreground="#F8FAFC" VerticalAlignment="Center" />
                     <Border Margin="8,0,0,0" Padding="6,2" Background="#111B2C" CornerRadius="5" BorderBrush="#1C2F4E" BorderThickness="1" VerticalAlignment="Center">
                         <TextBlock Text="MASQUE H2" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8" />
                     </Border>
