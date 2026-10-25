@@ -12,8 +12,7 @@ namespace AetherClient.Core
     public sealed partial class AetherProcessService : IDisposable
     {
         private const string ExecutableName = "aether.exe";
-        private const string Arguments = "--masque --h2 -4 --turbo";
-        private const string ReadyTrigger = "[+] socks5 server listening on 127.0.0.1:1819";
+        private const string ReadyTrigger = "socks5 server listening";
 
         [GeneratedRegex(@"masque exit:\s*([^,]+),\s*([^,]+),\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
         private static partial Regex MasqueExitRegex();
@@ -61,7 +60,7 @@ namespace AetherClient.Core
             }
         }
 
-        public Task StartAsync()
+        public Task StartAsync(bool forceFreshScan = false)
         {
             string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ExecutableName);
             if (!File.Exists(exePath))
@@ -75,13 +74,17 @@ namespace AetherClient.Core
                 _isStopping = false;
                 _cts = new CancellationTokenSource();
 
+                string scanFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
+                string arguments = $"--masque --h2 -4 --turbo {scanFlag}";
+
                 var psi = new ProcessStartInfo
                 {
                     FileName = exePath,
-                    Arguments = Arguments,
+                    Arguments = arguments,
                     WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
                     UseShellExecute = false,
                     CreateNoWindow = true,
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     StandardOutputEncoding = Encoding.UTF8,
@@ -102,10 +105,13 @@ namespace AetherClient.Core
                 _jobManager.AssignProcess(process);
                 _process = process;
 
+                // Close stdin immediately so aether.exe never blocks on interactive prompts
+                try { process.StandardInput.Close(); } catch { }
+
                 _ = ConsumeStreamAsync(process.StandardOutput, _cts.Token);
                 _ = ConsumeStreamAsync(process.StandardError, _cts.Token);
 
-                EmitLog($"[SYS] Launched {ExecutableName} {Arguments} (PID: {process.Id})");
+                EmitLog($"[SYS] Launched {ExecutableName} {arguments} (PID: {process.Id})");
             }
 
             return Task.CompletedTask;

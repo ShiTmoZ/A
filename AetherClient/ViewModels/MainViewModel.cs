@@ -44,6 +44,12 @@ namespace AetherClient.ViewModels
         private string _exitRtt = "—";
 
         [ObservableProperty]
+        private string _pingQualityColor = "#64748B";
+
+        [ObservableProperty]
+        private bool _isFreshScan = false;
+
+        [ObservableProperty]
         private bool _isLogExpanded = false;
 
         public ObservableCollection<string> DiagnosticLogs { get; } = new();
@@ -67,10 +73,14 @@ namespace AetherClient.ViewModels
         public string ConnectButtonSubText => CurrentState switch
         {
             ConnectionState.Connected => SelectedMode == TunnelMode.TrueTun
-                ? "Aether-Tun (0.0.0.0/0 -> 127.0.0.1:1819)"
-                : "System Proxy (127.0.0.1:1819)",
-            ConnectionState.Hunting   => "Negotiating MASQUE H2 Turbo session...",
-            _                         => "Click to initialize Aether core"
+                ? "Full TUN Active (0.0.0.0/0 -> 127.0.0.1:1819)"
+                : "System Proxy Active (WinINET -> 127.0.0.1:1819)",
+            ConnectionState.Hunting   => IsFreshScan
+                ? "Hunting new edge gateway (Deep Scan)..."
+                : "Verifying cached gateway & hunting...",
+            _                         => IsFreshScan
+                ? "Click to start deep gateway hunt"
+                : "Click for instant quick reconnect"
         };
 
         public bool CanChangeMode => CurrentState == ConnectionState.Disconnected;
@@ -135,7 +145,7 @@ namespace AetherClient.ViewModels
                 ResetTelemetry();
                 SetState(ConnectionState.Hunting);
 
-                await _processService.StartAsync().ConfigureAwait(false);
+                await _processService.StartAsync(IsFreshScan).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -183,6 +193,18 @@ namespace AetherClient.ViewModels
                 ExitIp = telemetry.IpAddress;
                 ExitRoute = telemetry.Route;
                 ExitRtt = telemetry.Rtt;
+
+                // Color code latency
+                string color = "#38BDF8";
+                string raw = telemetry.Rtt.Replace("ms", "").Trim();
+                if (double.TryParse(raw, out double ms))
+                {
+                    if (ms < 180) color = "#10B981"; // Emerald
+                    else if (ms < 350) color = "#38BDF8"; // Sky Blue
+                    else if (ms < 600) color = "#F59E0B"; // Amber
+                    else color = "#EF4444"; // Crimson
+                }
+                PingQualityColor = color;
             });
 
             if (SelectedMode == TunnelMode.TrueTun)
@@ -233,6 +255,7 @@ namespace AetherClient.ViewModels
                 ExitIp = "—";
                 ExitRoute = "—";
                 ExitRtt = "—";
+                PingQualityColor = "#64748B";
             });
         }
 
