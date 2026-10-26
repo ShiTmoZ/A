@@ -91,21 +91,17 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           name: Cloudflare WARP (MASQUE Edition) ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           body: |
-            ### Cloudflare WARP (MASQUE Edition) — Fluent Cyber-Glass Edition
+            ### Cloudflare WARP (MASQUE Edition) — Liquid Glass & Floating Cyber Edition
             Zero-bloat, production-grade desktop client for Cloudflare MASQUE (RFC 9298) HTTP/2 censorship bypass on DPI-restricted networks (TCI / MCI / Irancell).
 
             #### What's New in this Release:
-            - **Fluent Cyber-Glass UI**: Clean, authentic Windows 11 obsidian glass interface with zero cartoon stickers, specular highlights, and zero text clipping.
-            - **3-State Exit Location & Geo Filter**:
-              - ⚡ `Auto Anycast`: Ultra-low latency Cloudflare edge mesh auto-probe.
-              - 🌍 `Bypass Iran (--exit-loc !IR)`: Automatically rejects Iranian geo-mapped exit nodes, guaranteeing an external exit IP.
-              - 🇪🇺 `Europe Direct (--mim)`: Dual-hop nested MASQUE-in-MASQUE tunnel directly to Frankfurt and Amsterdam gateways.
-            - **Live Monospace Telemetry Console**: 1-click clipboard copy with visual feedback ("Copied!") and console clear.
-            - **Anycast Turbo Mesh Engine**: Parallel multi-threaded hunter (`--turbo`) for reliable MASQUE connection in Iran.
-            - **Zero-Orphan Process Management**: Native Windows Job Object guarantees complete cleanup on close or unexpected exit.
-            - **Dual Routing Architecture**:
-              - *True TUN (Wintun L3)*: L3 kernel adapter with netsh DNS locked to 1.1.1.1 to neutralize 10.10.34.34 DNS poisoning.
-              - *System Proxy*: WinINET local proxy on 127.0.0.1:1820.
+            - **Liquid Glass & Floating Cyber UI**: High-end translucent acrylic panels with specular rim lighting, interactive -2px hover lifts, and a dynamic 4-state Liquid Reactor Core.
+            - **Strict Backend Execution Discipline**: Re-locked `aether.exe v2.4.0` invocation to verified stable parameters (`--masque --h2 -4 --turbo --quick-reconnect --http-proxy 127.0.0.1:1820`), permanently resolving startup usage crashes.
+            - **Upper Deck Floating HUD**: Real-time Anycast edge discovery, live IATA Exit POP detection, and multi-tier RTT latency grading (<180ms Emerald, 180-280ms Cyan, >280ms Amber).
+            - **Segmented Routing Island**: Seamless toggle between True TUN (Wintun L3 kernel adapter) and System Proxy (WinINET loopback on 127.0.0.1:1820).
+            - **Zero-Orphan Architecture**: Process trees bound to Windows Kernel Job Object (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) ensuring 100% orphan-free termination.
+            - **DNS Guard & Self-Healing**: Automated `netsh` DNS lock to 1.1.1.1 preventing 10.10.34.34 injection, with automatic DHCP restoration on severance.
+            - **Live Glass Terminal**: Syntax-highlighted event telemetry with 1-click clipboard copy ("Copied! ✓") and memory-capped flow document.
           files: .\AetherClient-Windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

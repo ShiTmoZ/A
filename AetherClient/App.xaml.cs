@@ -1,10 +1,11 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Win32;
+using AetherClient.Core;
 using AetherClient.Services;
-using AetherClient.ViewModels;
 using AetherClient.Views;
 
 namespace AetherClient
@@ -12,7 +13,6 @@ namespace AetherClient
     public partial class App : Application
     {
         private Mutex? _singleInstanceMutex;
-        private MainViewModel? _viewModel;
         private MainWindow? _mainWindow;
         private TrayIconService? _trayService;
         private bool _hasNotifiedTrayMinimize;
@@ -23,7 +23,6 @@ namespace AetherClient
 
             try
             {
-                // Mutex for single instance check with safe fallback
                 bool createdNew = true;
                 try
                 {
@@ -31,7 +30,6 @@ namespace AetherClient
                 }
                 catch
                 {
-                    // Fall back if Mutex fails
                     createdNew = true;
                 }
 
@@ -42,11 +40,10 @@ namespace AetherClient
                         "Aether Client",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
-                    Shutdown();
+                    Current.Shutdown();
                     return;
                 }
 
-                // Register global crash / logoff hooks with crash file logging
                 AppDomain.CurrentDomain.UnhandledException += (_, args) =>
                 {
                     LogFatalException(args.ExceptionObject as Exception);
@@ -63,22 +60,27 @@ namespace AetherClient
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                     args.Handled = true;
-                    Shutdown(1);
+                    Current.Shutdown(1);
                 };
 
                 SystemEvents.SessionEnding += (_, _) => EmergencyTeardown();
 
-                _viewModel = new MainViewModel();
-                _mainWindow = new MainWindow(_viewModel, OnMinimizedToTray);
+                _mainWindow = new MainWindow(OnMinimizedToTray);
 
                 try
                 {
                     _trayService = new TrayIconService(
                         showWindowAction: RestoreMainWindow,
-                        toggleConnectionAction: () => _ = _viewModel.ToggleConnectionAsync(),
+                        toggleConnectionAction: () => _ = _mainWindow.ToggleConnectionAsync(),
                         exitApplicationAction: PerformCleanExit);
 
-                    _viewModel.StateChanged += (state, mode) => _trayService.UpdateState(state, mode);
+                    _mainWindow.ProcessService.TelemetryUpdated += (s, snap) =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            _trayService?.UpdateState(snap.State, _mainWindow.ProcessService.CurrentRoutingMode);
+                        });
+                    };
                 }
                 catch (Exception trayEx)
                 {
@@ -95,7 +97,7 @@ namespace AetherClient
                     "Aether Fatal Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
-                Shutdown(1);
+                Current.Shutdown(1);
             }
         }
 
@@ -146,14 +148,17 @@ namespace AetherClient
             _trayService?.Dispose();
             _singleInstanceMutex?.ReleaseMutex();
             _singleInstanceMutex?.Dispose();
-            Shutdown(0);
+            Current.Shutdown(0);
         }
 
         private void EmergencyTeardown()
         {
             try
             {
-                _viewModel?.Dispose();
+                if (_mainWindow is not null)
+                {
+                    _ = _mainWindow.ProcessService.DisposeAsync();
+                }
             }
             catch { }
         }

@@ -3,125 +3,223 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="clr-namespace:AetherClient.ViewModels"
         mc:Ignorable="d"
-        Title="Cloudflare WARP (MASQUE Edition) - Fluent Cyber Edition"
-        Width="960" Height="650"
-        MinWidth="960" MinHeight="650"
+        Title="AETHER // LIQUID GLASS MASQUE CLIENT v2.4.0"
+        Width="1100" Height="780"
+        MinWidth="960" MinHeight="700"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
-        ResizeMode="NoResize"
-        Closing="Window_Closing">
+        ResizeMode="CanResizeWithGrip"
+         FontFamily="Segoe UI Variable Display, Segoe UI"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
 
     <Window.Resources>
-        <!-- COLOR SYSTEM: Obsidian Fluent Cyber-Glass -->
-        <Color x:Key="CanvasDarkColor">#090C15</Color>
-        <Color x:Key="CardSurfaceColor">#101626</Color>
-        <Color x:Key="CardElevatedColor">#162035</Color>
-        <Color x:Key="BorderSubtleColor">#1D2A42</Color>
-        <Color x:Key="BorderGlassColor">#2A3C5E</Color>
+        <!-- ========================================================================= -->
+        <!-- PALETTE & LIQUID GLASS BRUSHES                                            -->
+        <!-- ========================================================================= -->
+        
+        <!-- Deep Obsidian Abyss Backplate -->
+        <LinearGradientBrush x:Key="ObsidianAbyssBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#06080F" Offset="0.0"/>
+            <GradientStop Color="#080C16" Offset="0.5"/>
+            <GradientStop Color="#0B0F19" Offset="1.0"/>
+        </LinearGradientBrush>
 
-        <!-- Accents -->
-        <Color x:Key="CyberCyanColor">#00D2FF</Color>
-        <Color x:Key="CyberIndigoColor">#6366F1</Color>
-        <Color x:Key="CyberVioletColor">#8B5CF6</Color>
-        <Color x:Key="ConnectedEmeraldColor">#10B981</Color>
-        <Color x:Key="AmberRadarColor">#F59E0B</Color>
-        <Color x:Key="AlertCrimsonColor">#EF4444</Color>
+        <!-- Ambient Deep Azure Reactor Backglow -->
+        <RadialGradientBrush x:Key="ReactorAmbientGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#CC091E3A" Offset="0.0"/>
+            <GradientStop Color="#55091E3A" Offset="0.45"/>
+            <GradientStop Color="#0006080F" Offset="1.0"/>
+        </RadialGradientBrush>
 
-        <!-- Solid Brushes -->
-        <SolidColorBrush x:Key="CanvasDarkBrush" Color="{StaticResource CanvasDarkColor}"/>
-        <SolidColorBrush x:Key="CardSurfaceBrush" Color="{StaticResource CardSurfaceColor}"/>
-        <SolidColorBrush x:Key="CardElevatedBrush" Color="{StaticResource CardElevatedColor}"/>
-        <SolidColorBrush x:Key="BorderSubtleBrush" Color="{StaticResource BorderSubtleColor}"/>
-        <SolidColorBrush x:Key="BorderGlassBrush" Color="{StaticResource BorderGlassColor}"/>
-        <SolidColorBrush x:Key="CyberCyanBrush" Color="{StaticResource CyberCyanColor}"/>
-        <SolidColorBrush x:Key="CyberIndigoBrush" Color="{StaticResource CyberIndigoColor}"/>
-        <SolidColorBrush x:Key="CyberVioletBrush" Color="{StaticResource CyberVioletColor}"/>
-        <SolidColorBrush x:Key="ConnectedEmeraldBrush" Color="{StaticResource ConnectedEmeraldColor}"/>
-        <SolidColorBrush x:Key="AmberRadarBrush" Color="{StaticResource AmberRadarColor}"/>
-        <SolidColorBrush x:Key="AlertCrimsonBrush" Color="{StaticResource AlertCrimsonColor}"/>
+        <!-- Translucent Tinted Acrylic Panel (#12192B @ 70% Opacity) -->
+        <SolidColorBrush x:Key="LiquidGlassBrush" Color="#B312192B"/>
+        <SolidColorBrush x:Key="LiquidGlassHoverBrush" Color="#CC172138"/>
+        <SolidColorBrush x:Key="LiquidGlassDeepBrush" Color="#D90B101D"/>
 
-        <!-- Text Brushes -->
-        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8"/>
-        <SolidColorBrush x:Key="TextMutedBrush" Color="#64748B"/>
+        <!-- Specular Rim Highlighting (Top-Left Luminescence -> Bottom-Right Dark Fade) -->
+        <LinearGradientBrush x:Key="SpecularRimBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#5000E5FF" Offset="0.0"/>
+            <GradientStop Color="#20FFFFFF" Offset="0.38"/>
+            <GradientStop Color="#05FFFFFF" Offset="1.0"/>
+        </LinearGradientBrush>
 
-        <!-- Glow Effects -->
-        <DropShadowEffect x:Key="CyanGlowEffect" Color="{StaticResource CyberCyanColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.45"/>
-        <DropShadowEffect x:Key="EmeraldGlowEffect" Color="{StaticResource ConnectedEmeraldColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.5"/>
-        <DropShadowEffect x:Key="AmberGlowEffect" Color="{StaticResource AmberRadarColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.45"/>
+        <!-- Active Specular Rim for Hovered Interactive Cards -->
+        <LinearGradientBrush x:Key="SpecularRimActiveBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#9000E5FF" Offset="0.0"/>
+            <GradientStop Color="#35FFFFFF" Offset="0.45"/>
+            <GradientStop Color="#12FFFFFF" Offset="1.0"/>
+        </LinearGradientBrush>
 
-        <!-- Button Style -->
-        <Style x:Key="FluentButtonStyle" TargetType="Button">
+        <!-- State Accent Colors & Brushes -->
+        <Color x:Key="CyanAccentColor">#00E5FF</Color>
+        <Color x:Key="AmberAccentColor">#FF9100</Color>
+        <Color x:Key="EmeraldAccentColor">#00E676</Color>
+        <Color x:Key="CrimsonAccentColor">#FF1744</Color>
+        <Color x:Key="PurpleAccentColor">#C084FC</Color>
+        <Color x:Key="CoralErrorColor">#FF5252</Color>
+
+        <SolidColorBrush x:Key="CyanAccentBrush" Color="#00E5FF"/>
+        <SolidColorBrush x:Key="AmberAccentBrush" Color="#FF9100"/>
+        <SolidColorBrush x:Key="EmeraldAccentBrush" Color="#00E676"/>
+        <SolidColorBrush x:Key="CrimsonAccentBrush" Color="#FF1744"/>
+        <SolidColorBrush x:Key="PurpleAccentBrush" Color="#C084FC"/>
+        <SolidColorBrush x:Key="CoralErrorBrush" Color="#FF5252"/>
+
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F3F7FF"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#8A99B8"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#52607D"/>
+
+        <!-- Atmospheric Floating Elevation Shadow -->
+        <DropShadowEffect x:Key="FloatingElevationShadow"
+                          BlurRadius="28"
+                          ShadowDepth="4"
+                          Direction="270"
+                          Color="#000000"
+                          Opacity="0.55"/>
+
+        <!-- ========================================================================= -->
+        <!-- FLOATING GLASS CARD STYLE WITH -2PX HOVER LIFT MICRO-ANIMATION            -->
+        <!-- ========================================================================= -->
+        <Style x:Key="FloatingGlassCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource LiquidGlassBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SpecularRimBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Effect" Value="{StaticResource FloatingElevationShadow}"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform Y="0"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="UIElement.MouseEnter">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             To="-2" Duration="0:0:0.18">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="UIElement.MouseLeave">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             To="0" Duration="0:0:0.22">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource SpecularRimActiveBrush}"/>
+                    <Setter Property="Background" Value="{StaticResource LiquidGlassHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ========================================================================= -->
+        <!-- SLEEK GLASS BUTTON STYLE WITH -2PX HOVER LIFT                             -->
+        <!-- ========================================================================= -->
+        <Style x:Key="GlassActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource LiquidGlassBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SpecularRimBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform Y="0"/>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
+                        <Border x:Name="CardBorder"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
+                                CornerRadius="12"
+                                Padding="{TemplateBinding Padding}"
+                                Effect="{StaticResource FloatingElevationShadow}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.88"/>
+                                <Setter TargetName="CardBorder" Property="Background" Value="#D91B2947"/>
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource SpecularRimActiveBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.75"/>
+                                <Setter TargetName="CardBorder" Property="Background" Value="#E60E1629"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="CardBorder" Property="Opacity" Value="0.42"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="UIElement.MouseEnter">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             To="-2" Duration="0:0:0.16">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="UIElement.MouseLeave">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             To="0" Duration="0:0:0.20">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
         </Style>
 
-        <!-- Window Control Buttons -->
-        <Style x:Key="WindowControlBtnStyle" TargetType="Button">
-            <Setter Property="Width" Value="34"/>
+        <!-- Window Chrome Control Button Style -->
+        <Style x:Key="ChromeButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="36"/>
             <Setter Property="Height" Value="28"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="WnBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="WnBorder" Property="Background" Value="#22FFFFFF"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="WnBorder" Property="Background" Value="#33FFFFFF"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="WindowCloseBtnStyle" TargetType="Button" BasedOn="{StaticResource WindowControlBtnStyle}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="WnCloseBorder" Background="{TemplateBinding Background}" CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="WnCloseBorder" Property="Background" Value="{StaticResource AlertCrimsonBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -130,756 +228,688 @@
         </Style>
     </Window.Resources>
 
-    <!-- Outer Window Frame with Fluent Cyber Glass Border -->
-    <Border CornerRadius="14"
-            BorderBrush="{StaticResource BorderGlassBrush}"
-            BorderThickness="1.2">
-        <Border.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#090C15" Offset="0.0" />
-                <GradientStop Color="#0E1322" Offset="0.5" />
-                <GradientStop Color="#141C30" Offset="1.0" />
-            </LinearGradientBrush>
-        </Border.Background>
+    <!-- ============================================================================= -->
+    <!-- OUTER WINDOW CHROME & OBSIDIAN ABYSS BACKPLATE                                -->
+    <!-- ============================================================================= -->
+    <Border CornerRadius="18"
+            Background="{StaticResource ObsidianAbyssBrush}"
+            BorderBrush="{StaticResource SpecularRimBrush}"
+            BorderThickness="1.2"
+            ClipToBounds="True">
 
         <Grid>
-            <Grid.RowDefinitions>
-                <!-- Row 0: Custom Window Title Bar -->
-                <RowDefinition Height="46"/>
-                <!-- Row 1: Telemetry Metric Cards Strip (HUD) -->
-                <RowDefinition Height="Auto"/>
-                <!-- Row 2: Main Workspace (Control Deck + Terminal) -->
-                <RowDefinition Height="*"/>
-                <!-- Row 3: Bottom Status Bar -->
-                <RowDefinition Height="28"/>
-            </Grid.RowDefinitions>
+            <!-- Ambient Radial Gradient Glow of Deep Azure (#091E3A) Centered Behind Reactor Core -->
+            <Ellipse Width="780" Height="560"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     Margin="0,-60,0,0"
+                     Fill="{StaticResource ReactorAmbientGlowBrush}"
+                     IsHitTestVisible="False"/>
 
-            <!-- ========================================================= -->
-            <!-- ROW 0: WINDOW TITLE BAR (Draggable)                       -->
-            <!-- ========================================================= -->
-            <Border Grid.Row="0"
-                    Background="Transparent"
-                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
-                    Padding="16,0,12,0">
-                <Grid>
+            <!-- Subtle Cyber Grid Overlay -->
+            <Canvas IsHitTestVisible="False" Opacity="0.06">
+                <Line X1="0" Y1="170" X2="1400" Y2="170" Stroke="#00E5FF" StrokeThickness="1"/>
+                <Line X1="0" Y1="490" X2="1400" Y2="490" Stroke="#00E5FF" StrokeThickness="1"/>
+                <Line X1="550" Y1="0" X2="550" Y2="900" Stroke="#00E5FF" StrokeThickness="1"/>
+            </Canvas>
+
+            <!-- Main Layout Structure -->
+            <Grid Margin="22,14,22,20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="42"/>   <!-- Title Bar -->
+                    <RowDefinition Height="106"/>  <!-- Upper Deck: Floating Telemetry HUD -->
+                    <RowDefinition Height="295"/>  <!-- Center Stage: Liquid Reactor Core & Control Island -->
+                    <RowDefinition Height="*"/>    <!-- Lower Deck: Live Glass Terminal Telemetry -->
+                </Grid.RowDefinitions>
+
+                <!-- ================================================================= -->
+                <!-- ROW 0: FLOATING CYBER TITLE BAR                                   -->
+                <!-- ================================================================= -->
+                <Grid Grid.Row="0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" Background="Transparent">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Brand Identity -->
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- Brand Geometric Shield -->
-                        <Path Data="M12,2L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,2Z"
-                              Fill="{StaticResource CyberCyanBrush}"
-                              Width="16" Height="16"
-                              Stretch="Uniform"
-                              Margin="0,0,10,0"/>
-
-                        <TextBlock Text="CLOUDFLARE WARP"
-                                   FontSize="13"
-                                   FontWeight="Black"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                   VerticalAlignment="Center"/>
-
-                        <Border Margin="10,0,0,0"
-                                Background="#1A00D2FF"
-                                BorderBrush="{StaticResource CyberCyanBrush}"
+                        <Border Width="28" Height="28" CornerRadius="8"
+                                Background="#1A00E5FF"
+                                BorderBrush="{StaticResource SpecularRimActiveBrush}"
                                 BorderThickness="1"
-                                CornerRadius="4"
-                                Padding="6,2">
-                            <TextBlock Text="MASQUE RFC 9298"
-                                       FontSize="10"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource CyberCyanBrush}"/>
+                                Margin="0,0,12,0">
+                            <Path Data="M12,2 L22,19 L2,19 Z M12,8 L17,17 L7,17 Z"
+                                  Fill="{StaticResource CyanAccentBrush}"
+                                  Stretch="Uniform" Margin="5"/>
                         </Border>
-
-                        <Border Margin="6,0,0,0"
-                                Background="#1A6366F1"
-                                BorderBrush="{StaticResource CyberIndigoBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4"
-                                Padding="6,2">
-                            <TextBlock Text="FLUENT CYBER EDITION"
-                                       FontSize="10"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource CyberIndigoBrush}"/>
-                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="AETHER" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" CharacterSpacing="120"/>
+                                <TextBlock Text=" // MASQUE H2 CORE" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource CyanAccentBrush}" VerticalAlignment="Bottom" Margin="6,0,0,1"/>
+                            </StackPanel>
+                            <TextBlock Text="LIQUID GLASS &amp; FLOATING CYBER INSTRUMENT  •  v2.4.0 ENGINE"
+                                       FontSize="9.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <!-- Active CLI Command Preview Pill -->
-                    <Border HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#090E18"
-                            BorderBrush="{StaticResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            Padding="12,3"
-                            MaxWidth="400">
-                        <TextBlock Text="{Binding LastExecutedCommand}"
-                                   FontFamily="Consolas"
-                                   FontSize="10"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   TextTrimming="CharacterEllipsis"/>
+                    <!-- Endpoint Security Pill -->
+                    <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Background="#990E1526" BorderBrush="{StaticResource SpecularRimBrush}"
+                            BorderThickness="1" CornerRadius="12" Padding="14,5">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="7" Height="7" Fill="{StaticResource CyanAccentBrush}" Margin="0,0,8,0"/>
+                            <TextBlock Text="SOCKS5 127.0.0.1:1819" FontFamily="Consolas" FontSize="11" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="  |  " FontFamily="Consolas" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="HTTP 127.0.0.1:1820" FontFamily="Consolas" FontSize="11" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="  |  " FontFamily="Consolas" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock x:Name="DnsGuardBadgeText" Text="DNS GUARD: STANDBY" FontFamily="Consolas" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </StackPanel>
                     </Border>
 
-                    <!-- Window Control Buttons -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Button Style="{StaticResource WindowControlBtnStyle}" Click="MinimizeButton_Click">
-                            <TextBlock Text="—" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <!-- Window Controls -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource ChromeButtonStyle}" Click="MinimizeButton_Click" ToolTip="Minimize">
+                            <Path Data="M0,5 L10,5" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5"/>
                         </Button>
-                        <Button Style="{StaticResource WindowCloseBtnStyle}" Click="CloseButton_Click" Margin="4,0,0,0">
-                            <TextBlock Text="✕" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <Button Style="{StaticResource ChromeButtonStyle}" Click="MaximizeButton_Click" ToolTip="Maximize / Restore" Margin="4,0">
+                            <Rectangle Width="9" Height="9" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4"/>
+                        </Button>
+                        <Button Style="{StaticResource ChromeButtonStyle}" Click="CloseButton_Click" ToolTip="Exit AetherClient">
+                            <Path Data="M0,0 L10,10 M10,0 L0,10" Stroke="#FF5252" StrokeThickness="1.6"/>
                         </Button>
                     </StackPanel>
                 </Grid>
-            </Border>
 
-            <!-- ========================================================= -->
-            <!-- ROW 1: TELEMETRY METRIC HUD STRIP                         -->
-            <!-- ========================================================= -->
-            <Grid Grid.Row="1" Margin="16,0,16,10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+                <!-- ================================================================= -->
+                <!-- ROW 1: FLOATING TELEMETRY HUD (4 DETACHED GLASS CAPSULES)         -->
+                <!-- ================================================================= -->
+                <UniformGrid Grid.Row="1" Columns="4" Margin="-6,10,-6,6">
 
-                <!-- Metric 1: Status -->
-                <Border Grid.Column="0"
-                        Margin="0,0,5,0"
-                        Background="{StaticResource CardSurfaceBrush}"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="12,8">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Glowing Status Ring -->
-                        <Grid Grid.Column="0" Width="26" Height="26" Margin="0,0,10,0" VerticalAlignment="Center">
-                            <Ellipse x:Name="AuraOuterRing"
-                                     Width="24" Height="24"
-                                     Stroke="{StaticResource CyberCyanBrush}"
-                                     StrokeThickness="2"
-                                     RenderTransformOrigin="0.5,0.5">
-                                <Ellipse.RenderTransform>
-                                    <ScaleTransform x:Name="AuraScaleTransform" ScaleX="1.0" ScaleY="1.0"/>
-                                </Ellipse.RenderTransform>
-                                <Ellipse.Effect>
-                                    <DropShadowEffect x:Name="AuraDropShadow" Color="{StaticResource CyberCyanColor}" BlurRadius="12" ShadowDepth="0"/>
-                                </Ellipse.Effect>
-                            </Ellipse>
-                            <Ellipse x:Name="RadarSweepEllipse"
-                                     Width="14" Height="14"
-                                     Stroke="{StaticResource AmberRadarBrush}"
-                                     StrokeThickness="1.5"
-                                     StrokeDashArray="2 2"
-                                     RenderTransformOrigin="0.5,0.5">
-                                <Ellipse.RenderTransform>
-                                    <RotateTransform x:Name="RadarRotateTransform" Angle="0"/>
-                                </Ellipse.RenderTransform>
-                            </Ellipse>
-                        </Grid>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="TUNNEL STATE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
-                            <TextBlock Text="{Binding StatusBadgeText}"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource CyberCyanBrush}"
-                                       Margin="0,2,0,0"
+                    <!-- CAPSULE 1: STATUS -->
+                    <Border Style="{StaticResource FloatingGlassCardStyle}" Margin="6,0" Padding="18,14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel>
+                                <TextBlock Text="STATUS" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <!-- Pulsing Multi-State LED Indicator -->
+                                <Grid HorizontalAlignment="Right" VerticalAlignment="Center" Width="16" Height="16">
+                                    <Ellipse x:Name="StatusLedHalo" Width="16" Height="16" Fill="{StaticResource CyanAccentBrush}" Opacity="0.35">
+                                        <Ellipse.RenderTransformOrigin>0.5,0.5</Ellipse.RenderTransformOrigin>
+                                        <Ellipse.RenderTransform>
+                                            <ScaleTransform x:Name="StatusLedHaloScale" ScaleX="1.0" ScaleY="1.0"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                    <Ellipse x:Name="StatusLedCore" Width="8" Height="8" Fill="{StaticResource CyanAccentBrush}"/>
+                                </Grid>
+                            </DockPanel>
+                            <TextBlock x:Name="HudStatusText" Grid.Row="1"
+                                       Text="STANDBY"
+                                       FontSize="15.5" FontWeight="Bold"
+                                       Foreground="{StaticResource CyanAccentBrush}"
+                                       VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <!-- Metric 2: Gateway Peer -->
-                <Border Grid.Column="1"
-                        Margin="5,0,5,0"
-                        Background="{StaticResource CardSurfaceBrush}"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="12,8">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="GATEWAY PEER" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding GatewayPeer}"
-                                   FontFamily="Consolas"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                   Margin="0,2,0,0"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Metric 3: Datacenter Route -->
-                <Border Grid.Column="2"
-                        Margin="5,0,5,0"
-                        Background="{StaticResource CardSurfaceBrush}"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="12,8">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="EXIT LOCATION / ROUTE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding RouteDatacenter}"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource AmberRadarBrush}"
-                                   Margin="0,2,0,0"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Metric 4: Mesh Latency RTT -->
-                <Border Grid.Column="3"
-                        Margin="5,0,0,0"
-                        Background="{StaticResource CardSurfaceBrush}"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="12,8">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="MESH RTT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding LatencyRtt}"
-                                   FontFamily="Consolas"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource ConnectedEmeraldBrush}"
-                                   Margin="0,2,0,0"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <!-- ========================================================= -->
-            <!-- ROW 2: MAIN WORKSPACE (CONTROL DECK + TERMINAL)           -->
-            <!-- ========================================================= -->
-            <Grid Grid.Row="2" Margin="16,0,16,10">
-                <Grid.ColumnDefinitions>
-                    <!-- Left: Control Deck (Width 360) -->
-                    <ColumnDefinition Width="360"/>
-                    <!-- Gap -->
-                    <ColumnDefinition Width="14"/>
-                    <!-- Right: Terminal Telemetry Console (Width *) -->
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- ========================================================= -->
-                <!-- LEFT COLUMN: CONTROL DECK                                 -->
-                <!-- ========================================================= -->
-                <Grid Grid.Column="0">
-                    <Grid.RowDefinitions>
-                        <!-- Location & Exit Profile -->
-                        <RowDefinition Height="Auto"/>
-                        <!-- Routing Architecture -->
-                        <RowDefinition Height="Auto"/>
-                        <!-- Action Buttons -->
-                        <RowDefinition Height="Auto"/>
-                        <!-- Security Telemetry Card -->
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- CARD 1: EXIT LOCATION & GEO FILTER -->
-                    <Border Grid.Row="0"
-                            Margin="0,0,0,10"
-                            Background="{StaticResource CardSurfaceBrush}"
-                            BorderBrush="{StaticResource BorderSubtleBrush}"
-                            BorderThickness="1.2"
-                            CornerRadius="10"
-                            Padding="12,10">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <TextBlock Text="🌐" FontSize="11" Margin="0,0,6,0"/>
-                                <TextBlock Text="EXIT LOCATION &amp; GEO FILTER"
-                                           FontSize="11"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                            </StackPanel>
-
-                            <!-- Option 1: Auto Anycast -->
-                            <RadioButton Margin="0,0,0,6"
-                                         IsChecked="{Binding IsAutoAnycast, Mode=TwoWay}"
-                                         GroupName="ExitLocationSelection"
-                                         Cursor="Hand">
-                                <RadioButton.Template>
-                                    <ControlTemplate TargetType="RadioButton">
-                                        <Border x:Name="OptBorder"
-                                                Background="#0C1220"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="7"
-                                                Padding="10,6">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Text="⚡ Auto Anycast"
-                                                               FontSize="11"
-                                                               FontWeight="Bold"
-                                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                                    <TextBlock Text="Lowest RTT Cloudflare edge mesh"
-                                                               FontSize="10"
-                                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                                               Margin="0,1,0,0"/>
-                                                </StackPanel>
-                                                <Border Grid.Column="1"
-                                                        Background="#1A00D2FF"
-                                                        CornerRadius="4"
-                                                        Padding="5,1"
-                                                        VerticalAlignment="Center">
-                                                    <TextBlock Text="FASTEST" FontSize="8" FontWeight="Bold" Foreground="{StaticResource CyberCyanBrush}"/>
-                                                </Border>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="OptBorder" Property="Background" Value="#1A00D2FF"/>
-                                                <Setter TargetName="OptBorder" Property="BorderBrush" Value="{StaticResource CyberCyanBrush}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </RadioButton.Template>
-                            </RadioButton>
-
-                            <!-- Option 2: Bypass Iran -->
-                            <RadioButton Margin="0,0,0,6"
-                                         IsChecked="{Binding IsBypassIran, Mode=TwoWay}"
-                                         GroupName="ExitLocationSelection"
-                                         Cursor="Hand">
-                                <RadioButton.Template>
-                                    <ControlTemplate TargetType="RadioButton">
-                                        <Border x:Name="OptBorder"
-                                                Background="#0C1220"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="7"
-                                                Padding="10,6">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Text="🌍 Bypass Iran (--exit-loc !IR)"
-                                                               FontSize="11"
-                                                               FontWeight="Bold"
-                                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                                    <TextBlock Text="Rejects Iranian geo-mapped exit nodes"
-                                                               FontSize="10"
-                                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                                               Margin="0,1,0,0"/>
-                                                </StackPanel>
-                                                <Border Grid.Column="1"
-                                                        Background="#1AF59E0B"
-                                                        CornerRadius="4"
-                                                        Padding="5,1"
-                                                        VerticalAlignment="Center">
-                                                    <TextBlock Text="GEO SAFE" FontSize="8" FontWeight="Bold" Foreground="{StaticResource AmberRadarBrush}"/>
-                                                </Border>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="OptBorder" Property="Background" Value="#1AF59E0B"/>
-                                                <Setter TargetName="OptBorder" Property="BorderBrush" Value="{StaticResource AmberRadarBrush}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </RadioButton.Template>
-                            </RadioButton>
-
-                            <!-- Option 3: Europe Direct -->
-                            <RadioButton Margin="0"
-                                         IsChecked="{Binding IsEuropeanTunnel, Mode=TwoWay}"
-                                         GroupName="ExitLocationSelection"
-                                         Cursor="Hand">
-                                <RadioButton.Template>
-                                    <ControlTemplate TargetType="RadioButton">
-                                        <Border x:Name="OptBorder"
-                                                Background="#0C1220"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="7"
-                                                Padding="10,6">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Text="🇪🇺 Europe Direct (--mim)"
-                                                               FontSize="11"
-                                                               FontWeight="Bold"
-                                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                                    <TextBlock Text="Dual-hop MASQUE tunnel to Frankfurt / AMS"
-                                                               FontSize="10"
-                                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                                               Margin="0,1,0,0"/>
-                                                </StackPanel>
-                                                <Border Grid.Column="1"
-                                                        Background="#1A8B5CF6"
-                                                        CornerRadius="4"
-                                                        Padding="5,1"
-                                                        VerticalAlignment="Center">
-                                                    <TextBlock Text="NESTED" FontSize="8" FontWeight="Bold" Foreground="{StaticResource CyberVioletBrush}"/>
-                                                </Border>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="OptBorder" Property="Background" Value="#1A8B5CF6"/>
-                                                <Setter TargetName="OptBorder" Property="BorderBrush" Value="{StaticResource CyberVioletBrush}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </RadioButton.Template>
-                            </RadioButton>
-                        </StackPanel>
+                            <TextBlock x:Name="HudStatusSubText" Grid.Row="2"
+                                       Text="Awaiting MASQUE H2 link..."
+                                       FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                        </Grid>
                     </Border>
 
-                    <!-- CARD 2: ROUTING ENGINE -->
-                    <Border Grid.Row="1"
-                            Margin="0,0,0,10"
-                            Background="{StaticResource CardSurfaceBrush}"
-                            BorderBrush="{StaticResource BorderSubtleBrush}"
-                            BorderThickness="1.2"
-                            CornerRadius="10"
-                            Padding="12,10">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <TextBlock Text="🛡️" FontSize="11" Margin="0,0,6,0"/>
-                                <TextBlock Text="ROUTING ENGINE"
-                                           FontSize="11"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                            </StackPanel>
+                    <!-- CAPSULE 2: EDGE PEER -->
+                    <Border Style="{StaticResource FloatingGlassCardStyle}" Margin="6,0" Padding="18,14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel>
+                                <TextBlock Text="EDGE PEER" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="ANYCAST IPv4" FontSize="9.5" FontFamily="Consolas" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Right"/>
+                            </DockPanel>
+                            <TextBlock x:Name="HudEdgePeerText" Grid.Row="1"
+                                       Text="---.---.---.---:---"
+                                       FontFamily="Consolas" FontSize="16" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="HudEdgePeerSubText" Grid.Row="2"
+                                       Text="HTTP/2 MASQUE Endpoint"
+                                       FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                        </Grid>
+                    </Border>
 
-                            <Grid>
+                    <!-- CAPSULE 3: EXIT POP -->
+                    <Border Style="{StaticResource FloatingGlassCardStyle}" Margin="6,0" Padding="18,14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel>
+                                <TextBlock Text="EXIT POP" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <Border Background="#20C084FC" CornerRadius="5" Padding="6,1" HorizontalAlignment="Right">
+                                    <TextBlock x:Name="HudExitCountryText" Text="IATA" FontFamily="Consolas" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource PurpleAccentBrush}"/>
+                                </Border>
+                            </DockPanel>
+                            <TextBlock x:Name="HudExitPopText" Grid.Row="1"
+                                       Text="---"
+                                       FontFamily="Consolas" FontSize="22" FontWeight="Bold"
+                                       Foreground="{StaticResource PurpleAccentBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="HudExitPopSubText" Grid.Row="2"
+                                       Text="Cloudflare Edge Colocation"
+                                       FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- CAPSULE 4: REAL-TIME RTT -->
+                    <Border Style="{StaticResource FloatingGlassCardStyle}" Margin="6,0" Padding="18,14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel>
+                                <TextBlock Text="REAL-TIME RTT" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock x:Name="HudRttGradeBadge" Text="IDLE" FontFamily="Consolas" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Right"/>
+                            </DockPanel>
+                            <TextBlock x:Name="HudRttText" Grid.Row="1"
+                                       Text="-- ms"
+                                       FontFamily="Consolas" FontSize="21" FontWeight="Bold"
+                                       Foreground="{StaticResource CyanAccentBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="HudRttSubText" Grid.Row="2"
+                                       Text="SOCKS5 204 Probe Latency"
+                                       FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                        </Grid>
+                    </Border>
+                </UniformGrid>
+
+                <!-- ================================================================= -->
+                <!-- ROW 2: CENTER STAGE (LIQUID REACTOR CORE & FLOATING ISLAND)       -->
+                <!-- ================================================================= -->
+                <Grid Grid.Row="2" Margin="0,8,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.15*"/>
+                        <ColumnDefinition Width="0.85*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- LEFT/CENTER: THE LIQUID REACTOR CORE ACTION ORB/PILL -->
+                    <Border Grid.Column="0" Style="{StaticResource FloatingGlassCardStyle}" Margin="0,0,8,0" Padding="24,18">
+                        <Grid>
+                            <!-- Ambient Concentric Reactor Rings -->
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Width="250" Height="250" IsHitTestVisible="False">
+                                <!-- Outer Breathing Energy Pulse Ring -->
+                                <Ellipse x:Name="ReactorPulseRing"
+                                         Width="236" Height="236"
+                                         Stroke="{StaticResource CyanAccentBrush}"
+                                         StrokeThickness="1.5"
+                                         Opacity="0.35"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform x:Name="ReactorPulseScale" ScaleX="0.92" ScaleY="0.92"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+
+                                <!-- Secondary Structural Glass Ring -->
+                                <Ellipse Width="204" Height="204"
+                                         Stroke="#22FFFFFF"
+                                         StrokeDashArray="6 4"
+                                         StrokeThickness="1"/>
+
+                                <!-- Rotating Radar Sweep Ring (Active During Hunting State) -->
+                                <Ellipse x:Name="ReactorRadarRing"
+                                         Width="218" Height="218"
+                                         StrokeThickness="3"
+                                         StrokeDashArray="18 36"
+                                         Opacity="0.0"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.Stroke>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#FFFF9100" Offset="0.0"/>
+                                            <GradientStop Color="#20FF9100" Offset="0.6"/>
+                                            <GradientStop Color="#00FF9100" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Ellipse.Stroke>
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform x:Name="ReactorRadarRotate" Angle="0"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                            </Grid>
+
+                            <!-- Centerpiece Interactive Liquid Reactor Pill / Orb Button -->
+                            <Button x:Name="ReactorCoreButton"
+                                    Click="ReactorCoreButton_Click"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Cursor="Hand"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Button.RenderTransform>
+                                    <TranslateTransform Y="0"/>
+                                </Button.RenderTransform>
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="OrbSurface"
+                                                Width="330" Height="138"
+                                                CornerRadius="69"
+                                                BorderBrush="{StaticResource SpecularRimActiveBrush}"
+                                                BorderThickness="1.6">
+                                            <Border.Background>
+                                                <RadialGradientBrush Center="0.5,0.35" GradientOrigin="0.5,0.3" RadiusX="0.75" RadiusY="0.85">
+                                                    <GradientStop x:Name="CoreGlowInnerStop" Color="#4500E5FF" Offset="0.0"/>
+                                                    <GradientStop Color="#CC10192D" Offset="0.65"/>
+                                                    <GradientStop Color="#F20B1120" Offset="1.0"/>
+                                                </RadialGradientBrush>
+                                            </Border.Background>
+                                            <Border.Effect>
+                                                <DropShadowEffect x:Name="ReactorDropGlow"
+                                                                  Color="#00E5FF"
+                                                                  BlurRadius="36"
+                                                                  ShadowDepth="0"
+                                                                  Opacity="0.48"/>
+                                            </Border.Effect>
+
+                                            <Grid Margin="22,14">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <!-- Top Reactor State Tag -->
+                                                <Border HorizontalAlignment="Center"
+                                                        Background="#33000000"
+                                                        BorderBrush="#28FFFFFF"
+                                                        BorderThickness="1"
+                                                        CornerRadius="10"
+                                                        Padding="12,3">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Ellipse x:Name="ReactorPillDot" Width="6" Height="6" Fill="{StaticResource CyanAccentBrush}" Margin="0,0,6,0"/>
+                                                        <TextBlock x:Name="ReactorStateBadgeText"
+                                                                   Text="REACTOR CORE // STANDBY"
+                                                                   FontFamily="Consolas"
+                                                                   FontSize="10"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <!-- Main Action Typography -->
+                                                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Path x:Name="ReactorVectorIcon"
+                                                          Data="M13,2 L3,14 L12,14 L11,22 L21,10 L12,10 Z"
+                                                          Fill="{StaticResource CyanAccentBrush}"
+                                                          Width="20" Height="20"
+                                                          Stretch="Uniform"
+                                                          Margin="0,0,10,0"
+                                                          VerticalAlignment="Center"/>
+                                                    <TextBlock x:Name="ReactorActionLabel"
+                                                               Text="ENGAGE MASQUE LINK"
+                                                               FontSize="17.5"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                                               VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <!-- Subtitle Telemetry -->
+                                                <TextBlock x:Name="ReactorSubLabel"
+                                                           Grid.Row="2"
+                                                           Text="Click to initialize HTTP/2 Anycast Turbo Tunnel"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           HorizontalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Style.Triggers>
+                                            <EventTrigger RoutedEvent="UIElement.MouseEnter">
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                         To="-3" Duration="0:0:0.18">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <CubicEase EasingMode="EaseOut"/>
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                            <EventTrigger RoutedEvent="UIElement.MouseLeave">
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                         To="0" Duration="0:0:0.22">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <CubicEase EasingMode="EaseOut"/>
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
+                            <!-- Corner Hardware Spec Overlays -->
+                            <TextBlock Text="MASQUE // H2 // IPv4" FontFamily="Consolas" FontSize="10" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                            <TextBlock Text="JOB-OBJECT GUARDED" FontFamily="Consolas" FontSize="10" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            <TextBlock x:Name="ActiveCliPreviewText"
+                                       Text="--masque --h2 -4 --turbo --quick-reconnect --http-proxy 127.0.0.1:1820"
+                                       FontFamily="Consolas" FontSize="10"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- RIGHT/CENTER: FLOATING CONTROL ISLAND -->
+                    <Border Grid.Column="1" Style="{StaticResource FloatingGlassCardStyle}" Margin="8,0,0,0" Padding="20,16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Section Header -->
+                            <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                                <TextBlock Text="FLOATING CONTROL ISLAND" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="ROUTING &amp; MESH OPS" FontFamily="Consolas" FontSize="10" Foreground="{StaticResource CyanAccentBrush}" HorizontalAlignment="Right"/>
+                            </DockPanel>
+
+                            <!-- 1. Segmented Glass Switch (System Proxy vs True TUN Wintun L3) -->
+                            <Border Grid.Row="1"
+                                    Background="#99090D18"
+                                    BorderBrush="{StaticResource SpecularRimBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Height="44"
+                                    Padding="4"
+                                    Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Sliding Glass Pill Highlight -->
+                                    <Border x:Name="SegmentedPillIndicator"
+                                            Grid.Column="0"
+                                            Background="#3300E5FF"
+                                            BorderBrush="{StaticResource SpecularRimActiveBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="9"
+                                            RenderTransformOrigin="0.5,0.5">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform x:Name="SegmentedPillTranslate" X="0"/>
+                                        </Border.RenderTransform>
+                                    </Border>
+
+                                    <!-- Option A: System Proxy (Loopback) -->
+                                    <Button x:Name="SystemProxyModeBtn"
+                                            Grid.Column="0"
+                                            Click="SystemProxyModeBtn_Click"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Cursor="Hand">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="Transparent">
+                                                    <TextBlock x:Name="ProxyModeLabel"
+                                                               Text="System Proxy (Loopback)"
+                                                               FontSize="11.5"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- Option B: True TUN (Wintun L3) -->
+                                    <Button x:Name="TrueTunModeBtn"
+                                            Grid.Column="1"
+                                            Click="TrueTunModeBtn_Click"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Cursor="Hand">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="Transparent">
+                                                    <TextBlock x:Name="TunModeLabel"
+                                                               Text="True TUN (Wintun L3)"
+                                                               FontSize="11.5"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <!-- 2. Direct Custom Peer Lock Input (Optional IP:PORT override) -->
+                            <Border Grid.Row="2"
+                                    Background="#99090D18"
+                                    BorderBrush="{StaticResource SpecularRimBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="11"
+                                    Padding="12,8"
+                                    Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="PEER LOCK:"
+                                               FontFamily="Consolas"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource CyanAccentBrush}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,10,0"/>
+                                    <TextBox x:Name="CustomPeerTextBox"
+                                             Grid.Column="1"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             CaretBrush="{StaticResource CyanAccentBrush}"
+                                             FontFamily="Consolas"
+                                             FontSize="12"
+                                             VerticalAlignment="Center"
+                                             TextChanged="CustomPeerTextBox_TextChanged"
+                                             ToolTip="Leave blank for Auto Turbo Mesh, or specify IP:PORT (e.g. 162.159.198.86:443)"/>
+                                    <TextBlock x:Name="CustomPeerPlaceholder"
+                                               Grid.Column="1"
+                                               Text="Auto Turbo Mesh (or IP:PORT)"
+                                               FontFamily="Consolas"
+                                               FontSize="11.5"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               VerticalAlignment="Center"
+                                               IsHitTestVisible="False"/>
+                                    <Button Grid.Column="2"
+                                            Content="CLR"
+                                            Click="ClearCustomPeer_Click"
+                                            Background="#18FFFFFF"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderThickness="0"
+                                            FontFamily="Consolas"
+                                            FontSize="10"
+                                            Padding="6,2"
+                                            Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- 3. Tactical Operations Buttons: Hunt Next Edge & Speed / Ping Test -->
+                            <Grid Grid.Row="3">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- True TUN Radio -->
-                                <RadioButton Grid.Column="0"
-                                             Margin="0,0,4,0"
-                                             IsChecked="{Binding IsTunModeSelected, Mode=TwoWay}"
-                                             GroupName="ProxyModeSelection"
-                                             Cursor="Hand">
-                                    <RadioButton.Template>
-                                        <ControlTemplate TargetType="RadioButton">
-                                            <Border x:Name="PillBorder"
-                                                    Background="#0C1220"
-                                                    BorderBrush="{StaticResource BorderSubtleBrush}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="7"
-                                                    Padding="8,7">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                    <TextBlock Text="🛡️" FontSize="11" Margin="0,0,5,0"/>
-                                                    <TextBlock Text="True TUN (L3)"
-                                                               FontSize="11"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                                </StackPanel>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsChecked" Value="True">
-                                                    <Setter TargetName="PillBorder" Property="Background" Value="#1A00D2FF"/>
-                                                    <Setter TargetName="PillBorder" Property="BorderBrush" Value="{StaticResource CyberCyanBrush}"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </RadioButton.Template>
-                                </RadioButton>
+                                <!-- Hunt Next Edge Button (no-quick-reconnect) -->
+                                <Button x:Name="HuntNextEdgeButton"
+                                        Grid.Column="0"
+                                        Style="{StaticResource GlassActionButtonStyle}"
+                                        Click="HuntNextEdgeButton_Click"
+                                        Margin="0,0,6,0"
+                                        Padding="12,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Data="M12,2 A10,10 0 1,0 22,12 M12,6 A6,6 0 1,1 6,12"
+                                              Stroke="{StaticResource AmberAccentBrush}"
+                                              StrokeThickness="1.8"
+                                              Width="16" Height="16"
+                                              Stretch="Uniform"
+                                              Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="Hunt Next Edge" FontSize="12.5" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="--no-quick-reconnect" FontFamily="Consolas" FontSize="9.5" Foreground="{StaticResource AmberAccentBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
 
-                                <!-- System Proxy Radio -->
-                                <RadioButton Grid.Column="1"
-                                             Margin="4,0,0,0"
-                                             IsChecked="{Binding IsSystemProxySelected, Mode=TwoWay}"
-                                             GroupName="ProxyModeSelection"
-                                             Cursor="Hand">
-                                    <RadioButton.Template>
-                                        <ControlTemplate TargetType="RadioButton">
-                                            <Border x:Name="PillBorder"
-                                                    Background="#0C1220"
-                                                    BorderBrush="{StaticResource BorderSubtleBrush}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="7"
-                                                    Padding="8,7">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                    <TextBlock Text="🌐" FontSize="11" Margin="0,0,5,0"/>
-                                                    <TextBlock Text="System Proxy"
-                                                               FontSize="11"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                                </StackPanel>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsChecked" Value="True">
-                                                    <Setter TargetName="PillBorder" Property="Background" Value="#1A6366F1"/>
-                                                    <Setter TargetName="PillBorder" Property="BorderBrush" Value="{StaticResource CyberIndigoBrush}"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </RadioButton.Template>
-                                </RadioButton>
+                                <!-- Speed / Ping Test Button (SOCKS5 -> Cloudflare 204) -->
+                                <Button x:Name="PingTestButton"
+                                        Grid.Column="1"
+                                        Style="{StaticResource GlassActionButtonStyle}"
+                                        Click="PingTestButton_Click"
+                                        Margin="6,0,0,0"
+                                        Padding="12,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Data="M13,2 L3,14 L12,14 L11,22 L21,10 L12,10 Z"
+                                              Fill="{StaticResource EmeraldAccentBrush}"
+                                              Width="15" Height="15"
+                                              Stretch="Uniform"
+                                              Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="Speed / Ping Test" FontSize="12.5" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="SOCKS5 204 Probe" FontFamily="Consolas" FontSize="9.5" Foreground="{StaticResource EmeraldAccentBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
                             </Grid>
-
-                            <TextBlock Text="{Binding ActiveRoutingDescription}"
-                                       FontSize="10"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       Margin="0,7,0,0"
-                                       TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- CARD 3: ACTION BUTTONS -->
-                    <Grid Grid.Row="2" Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2.3*"/>
-                            <ColumnDefinition Width="1.2*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Primary Toggle Action Button -->
-                        <Button Grid.Column="0"
-                                Margin="0,0,8,0"
-                                Height="42"
-                                Style="{StaticResource FluentButtonStyle}"
-                                Background="{StaticResource CyberCyanBrush}"
-                                BorderThickness="0"
-                                Command="{Binding ToggleTunnelCommand}"
-                                Effect="{StaticResource CyanGlowEffect}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⚡" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PrimaryActionButtonText}"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           Foreground="#090C15"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Secondary Re-Hunt Edge Button -->
-                        <Button Grid.Column="1"
-                                Height="42"
-                                Style="{StaticResource FluentButtonStyle}"
-                                Background="{StaticResource CardElevatedBrush}"
-                                BorderBrush="{StaticResource AmberRadarBrush}"
-                                BorderThickness="1.2"
-                                Command="{Binding HuntNextEdgeCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🎯" FontSize="11" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Hunt Edge"
-                                           FontSize="11"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource AmberRadarBrush}"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-
-                    <!-- CARD 4: SECURITY & INTEGRITY MINI-HUD -->
-                    <Border Grid.Row="3"
-                            Background="{StaticResource CardSurfaceBrush}"
-                            BorderBrush="{StaticResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="10"
-                            Padding="12,8">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <TextBlock Grid.Row="0"
-                                       Text="SECURITY &amp; PROCESS INTEGRITY"
-                                       FontSize="9"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       Margin="0,0,0,6"/>
-
-                            <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                <Grid Margin="0,0,0,4">
-                                    <TextBlock Text="DNS Spoof Shield" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <TextBlock Text="LOCKED 1.1.1.1" FontSize="10" FontWeight="Bold" Foreground="{StaticResource ConnectedEmeraldBrush}" HorizontalAlignment="Right"/>
-                                </Grid>
-                                <Grid Margin="0,0,0,4">
-                                    <TextBlock Text="DPI Resistance" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <TextBlock Text="HTTP/2 CONNECT-IP" FontSize="10" FontWeight="Bold" Foreground="{StaticResource CyberCyanBrush}" HorizontalAlignment="Right"/>
-                                </Grid>
-                                <Grid>
-                                    <TextBlock Text="Process Guardian" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <TextBlock Text="JOB OBJECT ACTIVE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource CyberIndigoBrush}" HorizontalAlignment="Right"/>
-                                </Grid>
-                            </StackPanel>
                         </Grid>
                     </Border>
                 </Grid>
 
-                <!-- ========================================================= -->
-                <!-- RIGHT COLUMN: LIVE TERMINAL TELEMETRY CONSOLE             -->
-                <!-- ========================================================= -->
-                <Border Grid.Column="2"
-                        Background="#070A12"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
-                        BorderThickness="1.2"
-                        CornerRadius="10">
+                <!-- ================================================================= -->
+                <!-- ROW 3: LIVE GLASS TERMINAL TELEMETRY                              -->
+                <!-- ================================================================= -->
+                <Border Grid.Row="3" Style="{StaticResource FloatingGlassCardStyle}" Padding="18,14">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <!-- Terminal Header -->
-                            <RowDefinition Height="36"/>
-                            <!-- Terminal Monospace Log Stream -->
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
-                            <!-- Terminal Footer Endpoints -->
-                            <RowDefinition Height="26"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Terminal Header Bar -->
-                        <Border Grid.Row="0"
-                                Background="#0D1322"
-                                BorderBrush="{StaticResource BorderSubtleBrush}"
-                                BorderThickness="0,0,0,1"
-                                CornerRadius="10,10,0,0"
-                                Padding="12,0">
-                            <Grid>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="• LIVE TELEMETRY STREAM"
-                                               FontSize="11"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <Border Margin="8,0,0,0"
-                                            Background="#1E293B"
-                                            CornerRadius="4"
-                                            Padding="6,1">
-                                        <TextBlock Text="{Binding LogCountBadgeText}"
-                                                   FontSize="9"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource AmberRadarBrush}"/>
-                                    </Border>
-                                </StackPanel>
+                        <!-- Floating Console Header Tools -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                                <!-- Action Buttons: Copy Logs & Clear -->
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                    <Button Height="22"
-                                            Padding="8,0"
-                                            Margin="0,0,6,0"
-                                            Style="{StaticResource FluentButtonStyle}"
-                                            Background="#1E293B"
-                                            BorderThickness="0"
-                                            Command="{Binding CopyLogsCommand}">
-                                        <TextBlock Text="{Binding CopyButtonText}"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource CyberCyanBrush}"/>
-                                    </Button>
-                                    <Button Height="22"
-                                            Padding="8,0"
-                                            Style="{StaticResource FluentButtonStyle}"
-                                            Background="#1E293B"
-                                            BorderThickness="0"
-                                            Command="{Binding ClearLogsCommand}">
-                                        <TextBlock Text="Clear"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextMutedBrush}"/>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="8" Height="8" Fill="{StaticResource CyanAccentBrush}" Margin="0,0,8,0"/>
+                                <TextBlock Text="LIVE GLASS TERMINAL TELEMETRY"
+                                           FontSize="11" FontWeight="Bold"
+                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                            </StackPanel>
 
-                        <!-- Terminal Monospace Log Stream -->
-                        <ListBox Grid.Row="1"
-                                 x:Name="TelemetryLogListBox"
-                                 ItemsSource="{Binding Logs}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Padding="10,6"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="Padding" Value="0,2"/>
-                                    <Setter Property="Margin" Value="0"/>
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="ListBoxItem">
-                                                <ContentPresenter/>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ListBox.ItemContainerStyle>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Timestamp}"
-                                                   FontFamily="Consolas"
-                                                   FontSize="11"
-                                                   Foreground="#64748B"
-                                                   Margin="0,0,8,0"/>
-                                        <TextBlock Text="{Binding Tag}"
-                                                   FontFamily="Consolas"
-                                                   FontSize="11"
-                                                   FontWeight="Bold"
-                                                   Foreground="{Binding TagBrush}"
-                                                   Margin="0,0,8,0"/>
-                                        <TextBlock Text="{Binding Message}"
-                                                   FontFamily="Consolas"
-                                                   FontSize="11"
-                                                   Foreground="{Binding MessageBrush}"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-
-                        <!-- Terminal Footer Endpoints -->
-                        <Border Grid.Row="2"
-                                Background="#0A0E18"
-                                BorderBrush="{StaticResource BorderSubtleBrush}"
-                                BorderThickness="0,1,0,0"
-                                CornerRadius="0,0,10,10"
-                                Padding="10,0">
-                            <Grid VerticalAlignment="Center">
-                                <TextBlock Text="{Binding LocalListeners}"
+                            <!-- Real-Time Event Counter Badge -->
+                            <Border Grid.Column="1"
+                                    Background="#2200E5FF"
+                                    BorderBrush="#4500E5FF"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="8,2"
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="EventCounterBadgeText"
+                                           Text="0 EVENTS"
                                            FontFamily="Consolas"
                                            FontSize="10"
-                                           Foreground="{StaticResource TextMutedBrush}"/>
-                                <TextBlock Text="RFC 9298 MASQUE"
-                                           FontSize="9"
                                            FontWeight="Bold"
-                                           Foreground="{StaticResource CyberCyanBrush}"
-                                           HorizontalAlignment="Right"/>
-                            </Grid>
+                                           Foreground="{StaticResource CyanAccentBrush}"/>
+                            </Border>
+
+                            <!-- Legend Pills -->
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="[CORE]" FontFamily="Consolas" FontSize="10.5" Foreground="#00E5FF" Margin="6,0"/>
+                                <TextBlock Text="[HUNT]" FontFamily="Consolas" FontSize="10.5" Foreground="#FFB300" Margin="6,0"/>
+                                <TextBlock Text="[TUN]" FontFamily="Consolas" FontSize="10.5" Foreground="#00E676" Margin="6,0"/>
+                                <TextBlock Text="[EXIT]" FontFamily="Consolas" FontSize="10.5" Foreground="#C084FC" Margin="6,0"/>
+                                <TextBlock Text="[WARN/ERR]" FontFamily="Consolas" FontSize="10.5" Foreground="#FF5252" Margin="6,0"/>
+                            </StackPanel>
+
+                            <!-- Copy Logs & Clear Buttons -->
+                            <StackPanel Grid.Column="3" Orientation="Horizontal">
+                                <Button x:Name="CopyLogsButton"
+                                        Style="{StaticResource GlassActionButtonStyle}"
+                                        Click="CopyLogsButton_Click"
+                                        Padding="12,5"
+                                        Margin="0,0,8,0">
+                                    <TextBlock x:Name="CopyLogsButtonText"
+                                               Text="Copy Logs"
+                                               FontFamily="Consolas"
+                                               FontSize="11"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </Button>
+                                <Button Style="{StaticResource GlassActionButtonStyle}"
+                                        Click="ClearLogsButton_Click"
+                                        Padding="12,5">
+                                    <TextBlock Text="Clear"
+                                               FontFamily="Consolas"
+                                               FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Syntax-Colored Monospace Consolas Terminal -->
+                        <Border Grid.Row="1"
+                                Background="{StaticResource LiquidGlassDeepBrush}"
+                                BorderBrush="#1AFFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="10,8">
+                            <RichTextBox x:Name="TelemetryTerminalBox"
+                                         IsReadOnly="True"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         FontFamily="Consolas"
+                                         FontSize="12"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Disabled">
+                                <RichTextBox.Resources>
+                                    <Style TargetType="{x:Type Paragraph}">
+                                        <Setter Property="Margin" Value="0,0,0,3"/>
+                                        <Setter Property="LineHeight" Value="17"/>
+                                    </Style>
+                                </RichTextBox.Resources>
+                                <FlowDocument x:Name="TelemetryFlowDoc" PagePadding="0"/>
+                            </RichTextBox>
                         </Border>
                     </Grid>
                 </Border>
             </Grid>
-
-            <!-- ========================================================= -->
-            <!-- ROW 3: BOTTOM STATUS BAR                                  -->
-            <!-- ========================================================= -->
-            <Border Grid.Row="3"
-                    Background="#070911"
-                    BorderBrush="{StaticResource BorderSubtleBrush}"
-                    BorderThickness="0,1,0,0"
-                    Padding="16,0">
-                <Grid VerticalAlignment="Center">
-                    <TextBlock Text="AETHER CORE v2.4.0 • Zero-Leak Wintun L3 • Clean IP Management"
-                               FontSize="10"
-                               Foreground="{StaticResource TextMutedBrush}"/>
-                    <TextBlock Text="DNS: 1.1.1.1 [Strict Netsh Clamped]"
-                               FontSize="10"
-                               FontWeight="SemiBold"
-                               Foreground="{StaticResource ConnectedEmeraldBrush}"
-                               HorizontalAlignment="Right"/>
-                </Grid>
-            </Border>
         </Grid>
     </Border>
 </Window>
