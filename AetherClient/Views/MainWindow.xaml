@@ -6,11 +6,11 @@
         xmlns:models="clr-namespace:AetherClient.Models"
         mc:Ignorable="d"
         Title="Aether MASQUE Client"
-        Width="460"
+        Width="450"
         SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanMinimize"
-        Background="#0A0D14"
+        Background="Transparent"
         Foreground="#F8FAFC"
         FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
         UseLayoutRounding="True"
@@ -18,43 +18,80 @@
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="42"
-                      CornerRadius="16"
-                      GlassFrameThickness="1"
+                      CornerRadius="24"
+                      GlassFrameThickness="-1"
                       ResizeBorderThickness="0"
                       UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
-        <!-- Colors & Brushes -->
-        <SolidColorBrush x:Key="BgDeep" Color="#0A0D14" />
-        <SolidColorBrush x:Key="BgCard" Color="#111622" />
-        <SolidColorBrush x:Key="BgCardHover" Color="#182030" />
-        <SolidColorBrush x:Key="BorderCard" Color="#1D263B" />
-        <SolidColorBrush x:Key="AccentSky" Color="#38BDF8" />
+        <!-- Liquid Glass Meniscus Specular Brushes -->
+        <LinearGradientBrush x:Key="MeniscusEdgeBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#E6FFFFFF" Offset="0.0" />
+            <GradientStop Color="#60FFFFFF" Offset="0.3" />
+            <GradientStop Color="#18FFFFFF" Offset="0.7" />
+            <GradientStop Color="#00000000" Offset="1.0" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="GlassTileEdgeBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#A0FFFFFF" Offset="0.0" />
+            <GradientStop Color="#30FFFFFF" Offset="0.4" />
+            <GradientStop Color="#0DFFFFFF" Offset="1.0" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="WindowGlassSurface" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#D80C1424" Offset="0.0" />
+            <GradientStop Color="#E8070C16" Offset="0.5" />
+            <GradientStop Color="#F2040710" Offset="1.0" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="TileGlassSurface" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#28FFFFFF" Offset="0.0" />
+            <GradientStop Color="#0AFFFFFF" Offset="0.5" />
+            <GradientStop Color="#121828" Offset="1.0" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="ActionPlateSurface" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#3AFFFFFF" Offset="0.0" />
+            <GradientStop Color="#12FFFFFF" Offset="0.45" />
+            <GradientStop Color="#18233A" Offset="1.0" />
+        </LinearGradientBrush>
+
+        <!-- Accent Colors -->
+        <SolidColorBrush x:Key="AccentIce" Color="#38BDF8" />
         <SolidColorBrush x:Key="AccentEmerald" Color="#10B981" />
         <SolidColorBrush x:Key="AccentAmber" Color="#F59E0B" />
-        <SolidColorBrush x:Key="TextMuted" Color="#64748B" />
-        <SolidColorBrush x:Key="TextSub" Color="#94A3B8" />
+        <SolidColorBrush x:Key="TextMuted" Color="#7A8CA3" />
+        <SolidColorBrush x:Key="TextSub" Color="#A4B3C6" />
 
-        <!-- Chrome Button -->
-        <Style x:Key="ChromeBtn" TargetType="Button">
+        <!-- Circular Glass Chrome Window Control Buttons -->
+        <Style x:Key="GlassChromeBtn" TargetType="Button">
             <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#94A3B8" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="#1FFFFFFF" />
+            <Setter Property="Foreground" Value="#C2D2E8" />
+            <Setter Property="BorderBrush" Value="#40FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6">
+                        <Border x:Name="BtnBd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="13">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#1E273D" />
-                                <Setter Property="Foreground" Value="#F8FAFC" />
+                                <Setter TargetName="BtnBd" Property="Background" Value="#38FFFFFF" />
+                                <Setter TargetName="BtnBd" Property="BorderBrush" Value="#80FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBd" Property="Background" Value="#55FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -62,33 +99,70 @@
             </Setter>
         </Style>
 
-        <!-- Segmented Mode Pill Radio -->
-        <Style x:Key="SegmentedPillRadio" TargetType="RadioButton">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#94A3B8" />
+        <Style x:Key="GlassChromeCloseBtn" TargetType="Button" BasedOn="{StaticResource GlassChromeBtn}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="13">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBd" Property="Background" Value="#80EF4444" />
+                                <Setter TargetName="BtnBd" Property="BorderBrush" Value="#FF9999" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Segmented Liquid Switch RadioButton -->
+        <Style x:Key="LiquidSegmentRadio" TargetType="RadioButton">
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#7A8CA3" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="PillBd"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="8"
-                                Padding="12,7"
-                                Margin="2">
+                                BorderThickness="1"
+                                BorderBrush="Transparent"
+                                CornerRadius="10"
+                                Padding="12,8">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PillBd" Property="Background" Value="#1B2438" />
-                                <Setter Property="Foreground" Value="#F8FAFC" />
+                                <Setter TargetName="PillBd" Property="Background" Value="#15FFFFFF" />
+                                <Setter Property="Foreground" Value="#E2E8F0" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="PillBd" Property="Background" Value="#1E2A44" />
-                                <Setter Property="Foreground" Value="#38BDF8" />
+                                <Setter TargetName="PillBd" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#40FFFFFF" Offset="0.0" />
+                                            <GradientStop Color="#18FFFFFF" Offset="0.5" />
+                                            <GradientStop Color="#253555" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="PillBd" Property="BorderBrush" Value="{StaticResource GlassTileEdgeBrush}" />
+                                <Setter TargetName="PillBd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#38BDF8" BlurRadius="12" ShadowDepth="2" Opacity="0.3" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />
-                                <Setter Property="Cursor" Value="Arrow" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -96,31 +170,93 @@
             </Setter>
         </Style>
 
-        <!-- Mini Action Button -->
-        <Style x:Key="MiniBtn" TargetType="Button">
-            <Setter Property="Background" Value="#151C2C" />
-            <Setter Property="Foreground" Value="#94A3B8" />
-            <Setter Property="BorderBrush" Value="#1F2A40" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="9,4" />
-            <Setter Property="FontSize" Value="11" />
+        <!-- Glass Action Plate Button Style -->
+        <Style x:Key="GlassActionPlateBtn" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{StaticResource ActionPlateSurface}" />
+            <Setter Property="BorderBrush" Value="{StaticResource MeniscusEdgeBrush}" />
+            <Setter Property="BorderThickness" Value="1.2" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd"
+                        <Border x:Name="PlateBd"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
+                                CornerRadius="18"
+                                Padding="18,12">
+                            <Border.Effect>
+                                <DropShadowEffect x:Name="PlateShadow"
+                                                  Color="#38BDF8"
+                                                  BlurRadius="28"
+                                                  ShadowDepth="6"
+                                                  Opacity="0.25"
+                                                  Direction="270" />
+                            </Border.Effect>
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="PlateBd" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#55FFFFFF" Offset="0.0" />
+                                            <GradientStop Color="#22FFFFFF" Offset="0.45" />
+                                            <GradientStop Color="#223350" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="PlateBd" Property="BorderBrush" Value="#FFFFFFFF" />
+                                <Setter TargetName="PlateShadow" Property="BlurRadius" Value="36" />
+                                <Setter TargetName="PlateShadow" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="PlateBd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.985" ScaleY="0.985" CenterX="150" CenterY="30" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
+                                <Setter TargetName="PlateShadow" Property="Color" Value="#F59E0B" />
+                                <Setter TargetName="PlateShadow" Property="Opacity" Value="0.55" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
+                                <Setter TargetName="PlateShadow" Property="Color" Value="#10B981" />
+                                <Setter TargetName="PlateShadow" Property="Opacity" Value="0.55" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Mini Action Pill Button (Copy/Clear) -->
+        <Style x:Key="MiniPillBtn" TargetType="Button">
+            <Setter Property="Background" Value="#1AFFFFFF" />
+            <Setter Property="BorderBrush" Value="#35FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#A4B3C6" />
+            <Setter Property="FontSize" Value="9.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="MiniBd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#38BDF8" />
-                                <Setter TargetName="Bd" Property="Background" Value="#1C273E" />
-                                <Setter Property="Foreground" Value="#F8FAFC" />
+                                <Setter TargetName="MiniBd" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="MiniBd" Property="BorderBrush" Value="#70FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -129,344 +265,301 @@
         </Style>
     </Window.Resources>
 
-    <!-- Outer Window Border with Subtle Gradient -->
-    <Border BorderThickness="1" CornerRadius="16" Background="#0A0D14">
-        <Border.BorderBrush>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#25324D" Offset="0.0" />
-                <GradientStop Color="#101522" Offset="0.5" />
-                <GradientStop Color="#1A2336" Offset="1.0" />
-            </LinearGradientBrush>
-        </Border.BorderBrush>
+    <!-- Master Liquid Glass Shell (Outer Window Frame) -->
+    <Border Margin="8"
+            CornerRadius="24"
+            Background="{StaticResource WindowGlassSurface}"
+            BorderBrush="{StaticResource MeniscusEdgeBrush}"
+            BorderThickness="1.2">
+        <Border.Effect>
+            <DropShadowEffect Color="#38BDF8" BlurRadius="34" ShadowDepth="8" Opacity="0.22" Direction="270" />
+        </Border.Effect>
 
-        <Grid Margin="22,10,22,22">
+        <Grid Margin="16,14,16,16">
             <Grid.RowDefinitions>
-                <RowDefinition Height="40" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />  <!-- 0: Header & Controls -->
+                <RowDefinition Height="Auto" />  <!-- 1: Telemetry Grid -->
+                <RowDefinition Height="Auto" />  <!-- 2: Primary Liquid Action Plate -->
+                <RowDefinition Height="Auto" />  <!-- 3: Segmented Routing Switch & Strategy -->
+                <RowDefinition Height="*" />     <!-- 4: Collapsible Logs HUD -->
             </Grid.RowDefinitions>
 
-            <!-- 1. Header Bar -->
-            <Grid Grid.Row="0">
+            <!-- 0. Header Chrome -->
+            <Grid Grid.Row="0" Margin="2,0,2,14">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Branding -->
+                <!-- Brand Group -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="26" Height="26" CornerRadius="7" Background="#142036" BorderBrush="#253A5E" BorderThickness="1" Margin="0,0,10,0">
-                        <Path Data="M 13 4 L 20 18 L 6 18 Z M 13 9 L 10 15 L 16 15 Z"
-                              Fill="#38BDF8"
-                              Stretch="Uniform"
-                              Width="14"
-                              Height="14"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center" />
+                    <!-- Optical Sapphire Lens Gem -->
+                    <Border Width="12" Height="12" CornerRadius="6" Margin="0,0,9,0" VerticalAlignment="Center">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="#38BDF8" />
+                                <Setter Property="BorderBrush" Value="#FFFFFF" />
+                                <Setter Property="BorderThickness" Value="1" />
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#38BDF8" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
+                                        <Setter Property="Background" Value="#F59E0B" />
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#F59E0B" BlurRadius="14" ShadowDepth="0" Opacity="0.9" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
+                                        <Setter Property="Background" Value="#10B981" />
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#10B981" BlurRadius="14" ShadowDepth="0" Opacity="0.9" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                     </Border>
-                    <TextBlock Text="AETHER" FontWeight="ExtraBold" FontSize="14.5" Foreground="#F8FAFC" VerticalAlignment="Center"  />
-                    <Border Margin="8,0,0,0" Padding="6,2" Background="#111B2C" CornerRadius="5" BorderBrush="#1C2F4E" BorderThickness="1" VerticalAlignment="Center">
-                        <TextBlock Text="MASQUE H2" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8" />
+
+                    <TextBlock Text="AETHER"
+                               FontFamily="Cascadia Code, Consolas"
+                               FontSize="13.5"
+                               FontWeight="Heavy"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center" />
+
+                    <!-- Protocol Capsule Badge -->
+                    <Border Margin="10,0,0,0"
+                            Padding="8,2"
+                            CornerRadius="999"
+                            Background="#18FFFFFF"
+                            BorderBrush="#38FFFFFF"
+                            BorderThickness="1"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="MASQUE // H2"
+                                   FontFamily="Cascadia Code, Consolas"
+                                   FontSize="9"
+                                   FontWeight="Bold"
+                                   Foreground="#C2D2E8" />
                     </Border>
                 </StackPanel>
 
-                <!-- Dynamic State Pill -->
-                <Border Grid.Column="1"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        CornerRadius="14"
-                        Padding="11,4"
-                        BorderThickness="1">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="#111622" />
-                            <Setter Property="BorderBrush" Value="#1D263B" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                    <Setter Property="Background" Value="#241B0E" />
-                                    <Setter Property="BorderBrush" Value="#F59E0B" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                    <Setter Property="Background" Value="#0D251E" />
-                                    <Setter Property="BorderBrush" Value="#10B981" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
+                <!-- Window Control Buttons (Minimize / Close) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource GlassChromeBtn}"
+                            Click="MinimizeButton_Click"
+                            ToolTip="Minimize to Taskbar"
+                            Margin="0,0,6,0">
+                        <Path Data="M 0 0 L 8 0" Stroke="#C2D2E8" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    </Button>
 
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse Width="7" Height="7" Margin="0,0,7,0">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="#64748B" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                            <Setter Property="Fill" Value="#F59E0B" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                            <Setter Property="Fill" Value="#10B981" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
-                        <TextBlock Text="{Binding StateBadgeText}"
-                                   FontSize="10.5"
-                                   FontWeight="Bold">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="#64748B" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                            <Setter Property="Foreground" Value="#F59E0B" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                            <Setter Property="Foreground" Value="#10B981" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                    <Button Style="{StaticResource GlassChromeCloseBtn}"
+                            Click="HideToTrayButton_Click"
+                            ToolTip="Close (Hide to System Tray)">
+                        <Path Data="M 0 0 L 8 8 M 0 8 L 8 0" Stroke="#C2D2E8" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- 1. Stabilized Telemetry Cards (SetProduct Scrim Glass Stack) -->
+            <Grid Grid.Row="1" Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.3*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Tile 1: Gateway Peer IP -->
+                <Border Grid.Column="0"
+                        CornerRadius="14"
+                        Background="{StaticResource TileGlassSurface}"
+                        BorderBrush="{StaticResource GlassTileEdgeBrush}"
+                        BorderThickness="1"
+                        Padding="11,9">
+                    <StackPanel>
+                        <TextBlock Text="GATEWAY PEER" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource TextMuted}" />
+                        <TextBlock Text="{Binding ExitIp}"
+                                   FontFamily="Cascadia Code, Consolas"
+                                   FontSize="11.5"
+                                   FontWeight="Bold"
+                                   Foreground="#FFFFFF"
+                                   Margin="0,3,0,0" />
                     </StackPanel>
                 </Border>
 
-                <!-- Window Control Buttons -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource ChromeBtn}" Click="MinimizeButton_Click" ToolTip="Minimize to Tray">
-                        <Path Data="M 0 0 L 10 0" Stroke="#94A3B8" StrokeThickness="1.5" />
-                    </Button>
-                    <Button Style="{StaticResource ChromeBtn}" Click="HideToTrayButton_Click" ToolTip="Close Application">
-                        <Path Data="M 0 0 L 9 9 M 9 0 L 0 9" Stroke="#94A3B8" StrokeThickness="1.5" />
-                    </Button>
-                </StackPanel>
-            </Grid>
-
-            <!-- 2. Cyber Central Power Orb -->
-            <Grid Grid.Row="1" Margin="0,18,0,18">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <!-- The Interactive Power Orb -->
-                <Grid Grid.Row="0" HorizontalAlignment="Center" Width="180" Height="180">
-                    <!-- Radar Ring 1 (Animated during Hunting) -->
-                    <Ellipse x:Name="RadarRing1"
-                             Width="140"
-                             Height="140"
-                             Stroke="#F59E0B"
-                             StrokeThickness="2"
-                             Opacity="0"
-                             RenderTransformOrigin="0.5,0.5">
-                        <Ellipse.RenderTransform>
-                            <ScaleTransform x:Name="RadarScale1" ScaleX="1.0" ScaleY="1.0" />
-                        </Ellipse.RenderTransform>
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                        <DataTrigger.EnterActions>
-                                            <BeginStoryboard x:Name="RadarPulse1">
-                                                <Storyboard RepeatBehavior="Forever">
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                     From="0.8" To="0.0" Duration="0:0:1.6" />
-                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                     From="1.0" To="1.45" Duration="0:0:1.6" />
-                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                     From="1.0" To="1.45" Duration="0:0:1.6" />
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </DataTrigger.EnterActions>
-                                        <DataTrigger.ExitActions>
-                                            <StopStoryboard BeginStoryboardName="RadarPulse1" />
-                                        </DataTrigger.ExitActions>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-
-                    <!-- Radar Ring 2 (Staggered Animated during Hunting) -->
-                    <Ellipse x:Name="RadarRing2"
-                             Width="140"
-                             Height="140"
-                             Stroke="#F59E0B"
-                             StrokeThickness="1.5"
-                             Opacity="0"
-                             RenderTransformOrigin="0.5,0.5">
-                        <Ellipse.RenderTransform>
-                            <ScaleTransform x:Name="RadarScale2" ScaleX="1.0" ScaleY="1.0" />
-                        </Ellipse.RenderTransform>
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                        <DataTrigger.EnterActions>
-                                            <BeginStoryboard x:Name="RadarPulse2">
-                                                <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.6">
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                     From="0.6" To="0.0" Duration="0:0:1.6" />
-                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                     From="1.0" To="1.6" Duration="0:0:1.6" />
-                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                     From="1.0" To="1.6" Duration="0:0:1.6" />
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </DataTrigger.EnterActions>
-                                        <DataTrigger.ExitActions>
-                                            <StopStoryboard BeginStoryboardName="RadarPulse2" />
-                                        </DataTrigger.ExitActions>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-
-                    <!-- Button Body -->
-                    <Button Command="{Binding ToggleConnectionCommand}"
-                            Width="140"
-                            Height="140"
-                            Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Grid>
-                                    <!-- Base Outer Glow -->
-                                    <Ellipse x:Name="OuterRing"
-                                             StrokeThickness="3"
-                                             Stroke="#1F2A40"
-                                             Fill="#0E131F">
-                                        <Ellipse.Effect>
-                                            <DropShadowEffect Color="#38BDF8" BlurRadius="26" ShadowDepth="0" Opacity="0" />
-                                        </Ellipse.Effect>
-                                    </Ellipse>
-
-                                    <!-- Inner Dial -->
-                                    <Ellipse Width="116" Height="116" Margin="12">
-                                        <Ellipse.Fill>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                <GradientStop Color="#161D2C" Offset="0" />
-                                                <GradientStop Color="#0B0E16" Offset="1" />
-                                            </LinearGradientBrush>
-                                        </Ellipse.Fill>
-                                    </Ellipse>
-
-                                    <!-- Power Vector Icon -->
-                                    <Path x:Name="PowerGlyph"
-                                          Width="42"
-                                          Height="42"
-                                          Stretch="Uniform"
-                                          Stroke="#64748B"
-                                          StrokeThickness="3.5"
-                                          StrokeStartLineCap="Round"
-                                          StrokeEndLineCap="Round"
-                                          Data="M 18 3 L 18 19 M 9.2 8.5 A 14.5 14.5 0 1 0 26.8 8.5" />
-                                </Grid>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="OuterRing" Property="Stroke" Value="#38BDF8" />
-                                        <Setter TargetName="PowerGlyph" Property="Stroke" Value="#38BDF8" />
-                                        <Setter TargetName="OuterRing" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#38BDF8" BlurRadius="30" ShadowDepth="0" Opacity="0.3" />
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Trigger>
-                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                        <Setter TargetName="OuterRing" Property="Stroke" Value="#F59E0B" />
-                                        <Setter TargetName="PowerGlyph" Property="Stroke" Value="#F59E0B" />
-                                        <Setter TargetName="OuterRing" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#F59E0B" BlurRadius="32" ShadowDepth="0" Opacity="0.5" />
-                                            </Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                        <Setter TargetName="OuterRing" Property="Stroke" Value="#10B981" />
-                                        <Setter TargetName="PowerGlyph" Property="Stroke" Value="#10B981" />
-                                        <Setter TargetName="OuterRing" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#10B981" BlurRadius="36" ShadowDepth="0" Opacity="0.6" />
-                                            </Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                </Grid>
-
-                <!-- Sub-labels under the Orb -->
-                <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,6,0,0">
-                    <TextBlock Text="{Binding ConnectButtonText}"
-                               FontSize="14.5"
-                               FontWeight="Bold"
-                               HorizontalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#F8FAFC" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                        <Setter Property="Foreground" Value="#F59E0B" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                        <Setter Property="Foreground" Value="#10B981" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                    <TextBlock Text="{Binding ConnectButtonSubText}"
-                               FontSize="11"
-                               Foreground="#64748B"
-                               HorizontalAlignment="Center"
-                               Margin="0,3,0,0" />
-                </StackPanel>
-            </Grid>
-
-            <!-- 3. Network Mode & Strategy Controllers -->
-            <StackPanel Grid.Row="2" Margin="0,0,0,14">
-                <!-- Dual Mode Selector Bar (Segmented Control) -->
-                <Border Background="#101522"
-                        BorderBrush="#1B2438"
+                <!-- Tile 2: Exit Node -->
+                <Border Grid.Column="2"
+                        CornerRadius="14"
+                        Background="{StaticResource TileGlassSurface}"
+                        BorderBrush="{StaticResource GlassTileEdgeBrush}"
                         BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="3">
+                        Padding="11,9">
+                    <StackPanel>
+                        <TextBlock Text="EXIT NODE" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource TextMuted}" />
+                        <TextBlock Text="{Binding ExitRoute}"
+                                   FontSize="11.5"
+                                   FontWeight="Bold"
+                                   Foreground="#C2D2E8"
+                                   Margin="0,3,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Tile 3: Latency & Dot -->
+                <Border Grid.Column="4"
+                        CornerRadius="14"
+                        Background="{StaticResource TileGlassSurface}"
+                        BorderBrush="{StaticResource GlassTileEdgeBrush}"
+                        BorderThickness="1"
+                        Padding="11,9">
+                    <StackPanel>
+                        <TextBlock Text="LATENCY" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource TextMuted}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0" VerticalAlignment="Center">
+                            <Ellipse Width="6" Height="6" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Ellipse.Fill>
+                                    <SolidColorBrush Color="{Binding PingQualityColor}" />
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <TextBlock Text="{Binding ExitRtt}"
+                                       FontFamily="Cascadia Code, Consolas"
+                                       FontSize="11.5"
+                                       FontWeight="Bold"
+                                       Foreground="#FFFFFF" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 2. Primary Tactile Glass Action Plate (Connect Button 290px x 62px) -->
+            <Grid Grid.Row="2" Margin="0,0,0,14" HorizontalAlignment="Center">
+                <Button Style="{StaticResource GlassActionPlateBtn}"
+                        Command="{Binding ToggleConnectionCommand}"
+                        Width="310"
+                        Height="62">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Optical Core Bezel -->
+                        <Border Grid.Column="0"
+                                Width="34"
+                                Height="34"
+                                CornerRadius="17"
+                                Background="#20FFFFFF"
+                                BorderBrush="#60FFFFFF"
+                                BorderThickness="1"
+                                Margin="0,0,14,0"
+                                VerticalAlignment="Center">
+                            <Border Width="12" Height="12" CornerRadius="6" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#38BDF8" />
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#38BDF8" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
+                                                <Setter Property="Background" Value="#F59E0B" />
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#F59E0B" BlurRadius="12" ShadowDepth="0" Opacity="0.9" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
+                                                <Setter Property="Background" Value="#10B981" />
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#10B981" BlurRadius="12" ShadowDepth="0" Opacity="0.9" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                        </Border>
+
+                        <!-- Title and State Microcopy -->
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ConnectButtonText}"
+                                       FontFamily="Cascadia Code, Consolas"
+                                       FontSize="13.5"
+                                       FontWeight="Heavy"
+                                       Foreground="#FFFFFF" />
+                            <TextBlock Text="{Binding ConnectButtonSubText}"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextSub}"
+                                       Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <!-- Right Chevron Lens Indicator -->
+                        <Path Grid.Column="2"
+                              Data="M 0 0 L 6 6 L 0 12"
+                              Stroke="#C2D2E8"
+                              StrokeThickness="2"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center" />
+                    </Grid>
+                </Button>
+            </Grid>
+
+            <!-- 3. Dual Routing Switch & Scan Strategy -->
+            <StackPanel Grid.Row="3" Margin="0,0,0,12">
+                <!-- Segmented Glass Switch Bar -->
+                <Border CornerRadius="13"
+                        Background="#121828"
+                        BorderBrush="{StaticResource GlassTileEdgeBrush}"
+                        BorderThickness="1"
+                        Padding="4">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- Mode A: System Proxy -->
+                        <!-- Option A: System Proxy -->
                         <RadioButton Grid.Column="0"
                                      GroupName="TunnelModeGroup"
                                      IsChecked="{Binding IsSystemProxyMode, Mode=TwoWay}"
                                      IsEnabled="{Binding CanChangeMode}"
-                                     Style="{StaticResource SegmentedPillRadio}">
+                                     Style="{StaticResource LiquidSegmentRadio}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <TextBlock Text="🌐" FontSize="11" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                <TextBlock Text="SYSTEM PROXY" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                                <TextBlock Text="SYSTEM PROXY" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
 
-                        <!-- Mode B: True TUN -->
+                        <!-- Option B: True TUN -->
                         <RadioButton Grid.Column="1"
                                      GroupName="TunnelModeGroup"
                                      IsChecked="{Binding IsTrueTunMode, Mode=TwoWay}"
                                      IsEnabled="{Binding CanChangeMode}"
-                                     Style="{StaticResource SegmentedPillRadio}">
+                                     Style="{StaticResource LiquidSegmentRadio}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <TextBlock Text="🛡️" FontSize="11" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                <TextBlock Text="TRUE TUN (ALL)" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                                <TextBlock Text="TRUE TUN (ALL)" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
                     </Grid>
                 </Border>
 
-                <!-- Scan Strategy Bar (Quick vs Deep) -->
+                <!-- Scan Strategy Toggles -->
                 <Grid Margin="4,8,4,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -474,7 +567,12 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" Text="SCAN STRATEGY" FontSize="9.5" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="0"
+                               Text="SCAN STRATEGY"
+                               FontSize="9"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextMuted}"
+                               VerticalAlignment="Center" />
 
                     <CheckBox Grid.Column="2"
                               IsChecked="{Binding IsFreshScan, Mode=TwoWay}"
@@ -488,8 +586,8 @@
                                             Height="14"
                                             CornerRadius="4"
                                             BorderThickness="1"
-                                            BorderBrush="#253552"
-                                            Background="#101624"
+                                            BorderBrush="#354565"
+                                            Background="#152035"
                                             Margin="0,0,6,0">
                                         <Path x:Name="CheckMark"
                                               Data="M 2 6 L 5 9 L 10 3"
@@ -499,15 +597,15 @@
                                     </Border>
                                     <TextBlock x:Name="CheckLabel"
                                                Text="⚡ Quick Reconnect (Instant)"
-                                               FontSize="10.5"
+                                               FontSize="10"
                                                FontWeight="SemiBold"
-                                               Foreground="#94A3B8" />
+                                               Foreground="{StaticResource TextSub}" />
                                 </StackPanel>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsChecked" Value="True">
                                         <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
                                         <Setter TargetName="CheckBd" Property="BorderBrush" Value="#38BDF8" />
-                                        <Setter TargetName="CheckBd" Property="Background" Value="#172740" />
+                                        <Setter TargetName="CheckBd" Property="Background" Value="#223555" />
                                         <Setter TargetName="CheckLabel" Property="Text" Value="🔍 Fresh Turbo Scan (2K IPs)" />
                                         <Setter TargetName="CheckLabel" Property="Foreground" Value="#38BDF8" />
                                     </Trigger>
@@ -518,111 +616,45 @@
                 </Grid>
             </StackPanel>
 
-            <!-- 4. Live Telemetry HUD -->
-            <Border Grid.Row="3"
-                    Background="#0F1420"
-                    BorderBrush="#1A2336"
-                    BorderThickness="1"
-                    CornerRadius="12"
-                    Padding="14,10"
-                    Margin="0,0,0,14">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="1" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="1" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Exit IP -->
-                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                        <TextBlock Text="EXIT IP" FontSize="9" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center" />
-                        <TextBlock Text="{Binding ExitIp}"
-                                   FontFamily="Cascadia Code, Consolas"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="#F8FAFC"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,3,0,0" />
-                    </StackPanel>
-
-                    <!-- Separator 1 -->
-                    <Rectangle Grid.Column="1" Fill="#1A2336" Margin="0,2" />
-
-                    <!-- Route -->
-                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                        <TextBlock Text="ROUTE" FontSize="9" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center" />
-                        <TextBlock Text="{Binding ExitRoute}"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
-                                   Foreground="#94A3B8"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,3,0,0" />
-                    </StackPanel>
-
-                    <!-- Separator 2 -->
-                    <Rectangle Grid.Column="3" Fill="#1A2336" Margin="0,2" />
-
-                    <!-- Latency / RTT with glowing color dot -->
-                    <StackPanel Grid.Column="4" HorizontalAlignment="Center">
-                        <TextBlock Text="LATENCY" FontSize="9" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center" />
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,3,0,0">
-                            <Ellipse Width="6" Height="6" Margin="0,0,5,0" VerticalAlignment="Center">
-                                <Ellipse.Fill>
-                                    <SolidColorBrush Color="{Binding PingQualityColor}" />
-                                </Ellipse.Fill>
-                            </Ellipse>
-                            <TextBlock Text="{Binding ExitRtt}"
-                                       FontFamily="Cascadia Code, Consolas"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       Foreground="#F8FAFC"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- 5. Collapsible Live Diagnostic Terminal Drawer -->
+            <!-- 4. Collapsible Diagnostic Terminal HUD -->
             <Expander Grid.Row="4"
                       IsExpanded="{Binding IsLogExpanded, Mode=TwoWay}"
                       Background="Transparent"
                       BorderThickness="0"
-                      Foreground="#64748B">
+                      Foreground="{StaticResource TextMuted}">
                 <Expander.Header>
-                    <Grid Width="390">
+                    <Grid Width="384">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="TERMINAL TELEMETRY" FontSize="10" FontWeight="Bold" Foreground="#64748B" />
-                            <Border Margin="8,0,0,0" Padding="5,1" Background="#111624" CornerRadius="4" BorderBrush="#1C263B" BorderThickness="1">
-                                <TextBlock Text="{Binding DiagnosticLogs.Count, StringFormat='{}{0} lines'}" FontSize="9" Foreground="#38BDF8" />
+                            <TextBlock Text="DIAGNOSTIC LOGS" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextMuted}" />
+                            <Border Margin="8,0,0,0" Padding="5,1" Background="#1AFFFFFF" CornerRadius="4" BorderBrush="#30FFFFFF" BorderThickness="1">
+                                <TextBlock Text="{Binding DiagnosticLogs.Count, StringFormat='{}{0} lines'}" FontSize="8.5" Foreground="#38BDF8" />
                             </Border>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Style="{StaticResource MiniBtn}" Content="Copy" Command="{Binding CopyLogsCommand}" Margin="0,0,6,0" />
-                            <Button Style="{StaticResource MiniBtn}" Content="Clear" Command="{Binding ClearLogsCommand}" />
+                            <Button Style="{StaticResource MiniPillBtn}" Content="Copy" Command="{Binding CopyLogsCommand}" Margin="0,0,6,0" />
+                            <Button Style="{StaticResource MiniPillBtn}" Content="Clear" Command="{Binding ClearLogsCommand}" />
                         </StackPanel>
                     </Grid>
                 </Expander.Header>
 
                 <Border Margin="0,8,0,0"
-                        Background="#080A10"
-                        BorderBrush="#182030"
+                        Background="#CC050810"
+                        BorderBrush="{StaticResource GlassTileEdgeBrush}"
                         BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="8"
-                        Height="145">
+                        CornerRadius="12"
+                        Padding="10"
+                        Height="140">
                     <ListBox x:Name="LogListBox"
                              ItemsSource="{Binding DiagnosticLogs}"
                              Background="Transparent"
                              BorderThickness="0"
-                             Foreground="#94A3B8"
+                             Foreground="#C2D2E8"
                              FontFamily="Cascadia Code, Consolas, Courier New"
-                             FontSize="10.5"
+                             FontSize="10"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                              VirtualizingPanel.IsVirtualizing="True"
