@@ -285,7 +285,7 @@
                         </Border>
                         <StackPanel VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="AETHER" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" CharacterSpacing="120"/>
+                                <TextBlock Text="AETHER" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock Text=" // MASQUE H2 CORE" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource CyanAccentBrush}" VerticalAlignment="Bottom" Margin="6,0,0,1"/>
                             </StackPanel>
                             <TextBlock Text="LIQUID GLASS &amp; FLOATING CYBER INSTRUMENT  •  v2.4.0 ENGINE"
