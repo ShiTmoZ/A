@@ -1,5 +1,5 @@
-using System.IO;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using System;
 using System.ComponentModel;
 using System.Text;
@@ -74,18 +74,18 @@ namespace AetherClient.Views
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 string[] candidatePaths =
                 {
-                    Path.Combine(baseDir, "app.ico"),
-                    Path.Combine(baseDir, "assets", "app.ico"),
-                    Path.Combine(baseDir, "Assets", "app.ico"),
-                    Path.Combine(Environment.CurrentDirectory, "app.ico"),
-                    Path.Combine(Environment.CurrentDirectory, "assets", "app.ico")
+                    System.IO.Path.Combine(baseDir, "app.ico"),
+                    System.IO.Path.Combine(baseDir, "assets", "app.ico"),
+                    System.IO.Path.Combine(baseDir, "Assets", "app.ico"),
+                    System.IO.Path.Combine(Environment.CurrentDirectory, "app.ico"),
+                    System.IO.Path.Combine(Environment.CurrentDirectory, "assets", "app.ico")
                 };
 
                 foreach (string path in candidatePaths)
                 {
-                    if (File.Exists(path))
+                    if (System.IO.File.Exists(path))
                     {
-                        using var stream = File.OpenRead(path);
+                        using var stream = System.IO.File.OpenRead(path);
                         Icon = BitmapFrame.Create(stream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                         return;
                     }
