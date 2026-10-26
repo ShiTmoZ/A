@@ -1,0 +1,86 @@
+using System;
+using Microsoft.Win32;
+using AetherClient.Core;
+
+namespace AetherClient.Network
+{
+    public sealed class WinInetProxyManager
+    {
+        private const string InternetSettingsKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Internet Settings";
+        private const string AetherProxyAddress = "127.0.0.1:1820";
+        private const string DefaultProxyOverride = "localhost;127.*;192.168.*;<local>";
+
+        private readonly Action<string> _logger;
+
+        public WinInetProxyManager(Action<string> logger)
+        {
+            _logger = logger;
+        }
+
+        public void EnableProxy()
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(InternetSettingsKeyPath, writable: true);
+            if (key is null)
+                throw new InvalidOperationException("Could not open Windows Internet Settings registry key.");
+
+            key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
+            key.SetValue("ProxyServer", AetherProxyAddress, RegistryValueKind.String);
+            key.SetValue("ProxyOverride", DefaultProxyOverride, RegistryValueKind.String);
+
+            RefreshWinInet();
+            NativeMethods.DnsFlushResolverCache();
+            _logger("[NET-PROXY] WinINET System Proxy enabled (HTTP/HTTPS: 127.0.0.1:1820).");
+        }
+
+        public void DisableProxy()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(InternetSettingsKeyPath, writable: true);
+                if (key is null) return;
+
+                string? currentServer = key.GetValue("ProxyServer") as string;
+                int? currentEnable = key.GetValue("ProxyEnable") as int?;
+
+                if (currentEnable == 1 || (currentServer?.Contains("1820", StringComparison.OrdinalIgnoreCase) ?? false) || (currentServer?.Contains("1819", StringComparison.OrdinalIgnoreCase) ?? false))
+                {
+                    key.SetValue("ProxyEnable", 0, RegistryValueKind.DWord);
+                    key.SetValue("ProxyServer", string.Empty, RegistryValueKind.String);
+
+                    RefreshWinInet();
+                    NativeMethods.DnsFlushResolverCache();
+                    _logger("[NET-PROXY] WinINET System Proxy disabled.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger($"[NET-PROXY-WARN] Could not revert system proxy settings: {ex.Message}");
+            }
+        }
+
+        public static void SanitizeOrphanedProxySettings()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(InternetSettingsKeyPath, writable: true);
+                if (key is null) return;
+
+                string? server = key.GetValue("ProxyServer") as string;
+                if (server is not null && (server.Contains("1820", StringComparison.OrdinalIgnoreCase) || server.Contains("1819", StringComparison.OrdinalIgnoreCase)))
+                {
+                    key.SetValue("ProxyEnable", 0, RegistryValueKind.DWord);
+                    key.SetValue("ProxyServer", string.Empty, RegistryValueKind.String);
+                    RefreshWinInet();
+                    NativeMethods.DnsFlushResolverCache();
+                }
+            }
+            catch { }
+        }
+
+        private static void RefreshWinInet()
+        {
+            NativeMethods.InternetSetOption(IntPtr.Zero, NativeMethods.INTERNET_OPTION_SETTINGS_CHANGED, IntPtr.Zero, 0);
+            NativeMethods.InternetSetOption(IntPtr.Zero, NativeMethods.INTERNET_OPTION_REFRESH, IntPtr.Zero, 0);
+        }
+    }
+}

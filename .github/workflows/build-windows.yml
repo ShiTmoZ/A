@@ -91,17 +91,17 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           name: Cloudflare WARP (MASQUE Edition) ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           body: |
-            ### Cloudflare WARP (MASQUE Edition) — Liquid Glass & Floating Cyber Edition
+            ### Cloudflare WARP (MASQUE Edition) — Cyber Dark Desktop Client
             Zero-bloat, production-grade desktop client for Cloudflare MASQUE (RFC 9298) HTTP/2 censorship bypass on DPI-restricted networks (TCI / MCI / Irancell).
 
-            #### What's New in this Release:
-            - **Liquid Glass & Floating Cyber UI**: High-end translucent acrylic panels with specular rim lighting, interactive -2px hover lifts, and a dynamic 4-state Liquid Reactor Core.
-            - **Strict Backend Execution Discipline**: Re-locked `aether.exe v2.4.0` invocation to verified stable parameters (`--masque --h2 -4 --turbo --quick-reconnect --http-proxy 127.0.0.1:1820`), permanently resolving startup usage crashes.
-            - **Upper Deck Floating HUD**: Real-time Anycast edge discovery, live IATA Exit POP detection, and multi-tier RTT latency grading (<180ms Emerald, 180-280ms Cyan, >280ms Amber).
-            - **Segmented Routing Island**: Seamless toggle between True TUN (Wintun L3 kernel adapter) and System Proxy (WinINET loopback on 127.0.0.1:1820).
+            #### Features:
+            - **Compact Nostalgic Cyber UI**: Clean, lightweight 460px desktop window with high-contrast cyber dark styling, glowing power orb, and zero bloat.
+            - **Strict Backend Execution Discipline**: Locked `aether.exe v2.4.0` invocation to verified stable parameters (`--masque --h2 -4 --turbo --quick-reconnect --http-proxy 127.0.0.1:1820`).
+            - **Live Edge Telemetry HUD**: Real-time Anycast edge discovery, live IATA Exit POP detection, and multi-tier RTT latency grading.
+            - **Dual Routing Modes**: Seamless toggle between True TUN (Wintun L3 kernel adapter with default route & DNS lock) and System Proxy (WinINET loopback on 127.0.0.1:1820).
             - **Zero-Orphan Architecture**: Process trees bound to Windows Kernel Job Object (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) ensuring 100% orphan-free termination.
             - **DNS Guard & Self-Healing**: Automated `netsh` DNS lock to 1.1.1.1 preventing 10.10.34.34 injection, with automatic DHCP restoration on severance.
-            - **Live Glass Terminal**: Syntax-highlighted event telemetry with 1-click clipboard copy ("Copied! ✓") and memory-capped flow document.
+            - **Collapsible Monospace Terminal**: Diagnostic telemetry with 1-click clipboard copy and clear.
           files: .\AetherClient-Windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

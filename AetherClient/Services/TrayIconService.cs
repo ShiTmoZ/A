@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using AetherClient.Core;
+using AetherClient.Models;
 
 namespace AetherClient.Services
 {
@@ -27,13 +28,13 @@ namespace AetherClient.Services
 
             var contextMenu = new ContextMenuStrip
             {
-                BackColor = Color.FromArgb(14, 21, 38),
+                BackColor = Color.FromArgb(22, 25, 34),
                 ForeColor = Color.FromArgb(241, 245, 249),
                 ShowImageMargin = false,
                 Renderer = new DarkMenuRenderer()
             };
 
-            _statusItem = new ToolStripMenuItem("Status: Standby")
+            _statusItem = new ToolStripMenuItem("Status: Disconnected")
             {
                 Enabled = false,
                 ForeColor = Color.FromArgb(148, 163, 184)
@@ -55,11 +56,11 @@ namespace AetherClient.Services
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add(exitItem);
 
-            _currentIcon = CreateDynamicIcon(ConnectionState.Standby);
+            _currentIcon = CreateDynamicIcon(ConnectionState.Disconnected);
 
             _notifyIcon = new NotifyIcon
             {
-                Text = "Aether Client — Standby",
+                Text = "Aether Client — Disconnected",
                 Icon = _currentIcon,
                 ContextMenuStrip = contextMenu,
                 Visible = true
@@ -68,15 +69,15 @@ namespace AetherClient.Services
             _notifyIcon.DoubleClick += (_, _) => _showWindowAction();
         }
 
-        public void UpdateState(ConnectionState state, RoutingMode mode)
+        public void UpdateState(ConnectionState state, TunnelMode mode)
         {
-            string modeLabel = mode == RoutingMode.TrueTun ? "TUN" : "Proxy";
+            string modeLabel = mode == TunnelMode.TrueTun ? "TUN" : "Proxy";
 
             (_statusItem.Text, _quickToggleItem.Text, _notifyIcon.Text) = state switch
             {
                 ConnectionState.Connected => ($"● Connected ({modeLabel})", "Quick Disconnect", $"Aether Client — Connected ({modeLabel})"),
                 ConnectionState.Hunting   => ($"◌ Hunting Exit Node...", "Cancel Hunting", "Aether Client — Hunting..."),
-                _                         => ("○ Standby", "Quick Connect", "Aether Client — Standby")
+                _                         => ("○ Disconnected", "Quick Connect", "Aether Client — Disconnected")
             };
 
             Icon? previous = _currentIcon;
@@ -99,12 +100,12 @@ namespace AetherClient.Services
 
             Color ringColor = state switch
             {
-                ConnectionState.Connected => Color.FromArgb(0, 230, 118),  // #00E676 Emerald
-                ConnectionState.Hunting   => Color.FromArgb(255, 145, 0),  // #FF9100 Amber
-                _                         => Color.FromArgb(0, 229, 255)   // #00E5FF Cyan
+                ConnectionState.Connected => Color.FromArgb(16, 185, 129),  // #10B981 Emerald
+                ConnectionState.Hunting   => Color.FromArgb(245, 158, 11),  // #F59E0B Amber
+                _                         => Color.FromArgb(100, 116, 139)  // #64748B Slate
             };
 
-            using (var bgBrush = new SolidBrush(Color.FromArgb(11, 15, 25)))
+            using (var bgBrush = new SolidBrush(Color.FromArgb(15, 17, 23)))
             {
                 g.FillEllipse(bgBrush, 2, 2, 28, 28);
             }
@@ -145,12 +146,12 @@ namespace AetherClient.Services
 
         private sealed class DarkColorTable : ProfessionalColorTable
         {
-            public override Color MenuItemSelected => Color.FromArgb(20, 32, 55);
-            public override Color MenuItemBorder => Color.FromArgb(0, 229, 255);
-            public override Color MenuBorder => Color.FromArgb(30, 45, 75);
-            public override Color ToolStripDropDownBackground => Color.FromArgb(14, 21, 38);
-            public override Color SeparatorDark => Color.FromArgb(30, 45, 75);
-            public override Color SeparatorLight => Color.FromArgb(30, 45, 75);
+            public override Color MenuItemSelected => Color.FromArgb(30, 41, 59);
+            public override Color MenuItemBorder => Color.FromArgb(56, 189, 248);
+            public override Color MenuBorder => Color.FromArgb(45, 55, 72);
+            public override Color ToolStripDropDownBackground => Color.FromArgb(22, 25, 34);
+            public override Color SeparatorDark => Color.FromArgb(45, 55, 72);
+            public override Color SeparatorLight => Color.FromArgb(45, 55, 72);
         }
     }
 }

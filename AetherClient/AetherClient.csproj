@@ -25,11 +25,7 @@
 
   <ItemGroup>
     <Resource Include="app.ico" />
-    <Resource Include="assets\avatar.jpg" />
     <None Update="app.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="assets\avatar.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="clean_ips.txt">
