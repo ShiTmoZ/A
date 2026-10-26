@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Specialized;
-using System.IO;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
@@ -11,7 +11,9 @@ namespace AetherClient.Views
 {
     public partial class MainWindow : Window
     {
-        private readonly MainViewModel? _viewModel;
+        private readonly MainViewModel _viewModel;
+        private readonly Action _onHideToTray;
+        public bool AllowClose { get; set; }
 
         // Windows 11 DWM Backdrop Attributes
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
@@ -21,17 +23,20 @@ namespace AetherClient.Views
         [DllImport("dwmapi.dll", PreserveSig = true)]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
-        public MainWindow()
+        public MainWindow() : this(new MainViewModel(), () => { })
+        {
+        }
+
+        public MainWindow(MainViewModel viewModel, Action onHideToTray)
         {
             InitializeComponent();
-            _viewModel = DataContext as MainViewModel;
+            _viewModel = viewModel;
+            _onHideToTray = onHideToTray;
+            DataContext = _viewModel;
 
-            if (_viewModel != null)
-            {
-                _viewModel.DiagnosticLogs.CollectionChanged += OnLogsCollectionChanged;
-            }
+            SafeSetWindowIcon();
 
-            // Window drag move anywhere on glass background
+            ((INotifyCollectionChanged)_viewModel.DiagnosticLogs).CollectionChanged += OnLogsCollectionChanged;
             MouseDown += MainWindow_MouseDown;
         }
 
@@ -44,22 +49,19 @@ namespace AetherClient.Views
                 var hwnd = new WindowInteropHelper(this).Handle;
                 if (hwnd != IntPtr.Zero)
                 {
-                    // 1. Enable Immersive Dark Mode for window frame
                     int darkMode = 1;
                     DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
 
-                    // 2. Request Rounded Window Corners (24px)
                     int cornerPreference = 2; // DWMWCP_ROUND
                     DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
 
-                    // 3. Request Hardware-Accelerated Acrylic Backdrop (Windows 11 build 22621+)
                     int backdropType = 3; // DWMSBT_TRANSIENTWINDOW (Acrylic Blur)
                     DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdropType, sizeof(int));
                 }
             }
             catch
             {
-                // Graceful fallback on older Windows 10 versions without DWM backdrop API
+                // Graceful fallback
             }
         }
 
@@ -67,16 +69,39 @@ namespace AetherClient.Views
         {
             if (e.ChangedButton == MouseButton.Left && e.ButtonState == MouseButtonState.Pressed)
             {
-                // Allow dragging window from any empty glass surface
                 try
                 {
                     DragMove();
                 }
-                catch
+                catch { }
+            }
+        }
+
+        private void SafeSetWindowIcon()
+        {
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string[] candidatePaths =
                 {
-                    // Ignore transient non-client exceptions
+                    System.IO.Path.Combine(baseDir, "app.ico"),
+                    System.IO.Path.Combine(baseDir, "assets", "app.ico")
+                };
+
+                foreach (string path in candidatePaths)
+                {
+                    if (System.IO.File.Exists(path))
+                    {
+                        using var stream = System.IO.File.OpenRead(path);
+                        Icon = System.Windows.Media.Imaging.BitmapFrame.Create(
+                            stream,
+                            System.Windows.Media.Imaging.BitmapCreateOptions.None,
+                            System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+                        return;
+                    }
                 }
             }
+            catch { }
         }
 
         private void OnLogsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -89,10 +114,7 @@ namespace AetherClient.Views
                     {
                         LogListBox.ScrollIntoView(LogListBox.Items[^1]);
                     }
-                    catch
-                    {
-                        // Ignore virtualization exceptions
-                    }
+                    catch { }
                 });
             }
         }
@@ -105,13 +127,21 @@ namespace AetherClient.Views
         private void HideToTrayButton_Click(object sender, RoutedEventArgs e)
         {
             Hide();
+            _onHideToTray();
         }
 
-        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        protected override void OnClosing(CancelEventArgs e)
         {
-            // Do not abruptly terminate background services on window close; minimize to system tray
-            e.Cancel = true;
-            Hide();
+            if (!AllowClose)
+            {
+                e.Cancel = true;
+                Hide();
+                _onHideToTray();
+                return;
+            }
+
+            ((INotifyCollectionChanged)_viewModel.DiagnosticLogs).CollectionChanged -= OnLogsCollectionChanged;
+            base.OnClosing(e);
         }
     }
 }
