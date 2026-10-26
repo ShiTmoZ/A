@@ -186,7 +186,7 @@
                                 CornerRadius="18"
                                 Padding="18,12">
                             <Border.Effect>
-                                <DropShadowEffect x:Name="PlateShadow"
+                                <DropShadowEffect
                                                   Color="#38BDF8"
                                                   BlurRadius="28"
                                                   ShadowDepth="6"
@@ -207,8 +207,11 @@
                                     </Setter.Value>
                                 </Setter>
                                 <Setter TargetName="PlateBd" Property="BorderBrush" Value="#FFFFFFFF" />
-                                <Setter TargetName="PlateShadow" Property="BlurRadius" Value="36" />
-                                <Setter TargetName="PlateShadow" Property="Opacity" Value="0.45" />
+                                <Setter TargetName="PlateBd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#38BDF8" BlurRadius="36" ShadowDepth="6" Opacity="0.45" Direction="270" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="PlateBd" Property="RenderTransform">
@@ -218,12 +221,18 @@
                                 </Setter>
                             </Trigger>
                             <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                <Setter TargetName="PlateShadow" Property="Color" Value="#F59E0B" />
-                                <Setter TargetName="PlateShadow" Property="Opacity" Value="0.55" />
+                                <Setter TargetName="PlateBd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#F59E0B" BlurRadius="36" ShadowDepth="6" Opacity="0.55" Direction="270" />
+                                    </Setter.Value>
+                                </Setter>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                <Setter TargetName="PlateShadow" Property="Color" Value="#10B981" />
-                                <Setter TargetName="PlateShadow" Property="Opacity" Value="0.55" />
+                                <Setter TargetName="PlateBd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#10B981" BlurRadius="36" ShadowDepth="6" Opacity="0.55" Direction="270" />
+                                    </Setter.Value>
+                                </Setter>
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
