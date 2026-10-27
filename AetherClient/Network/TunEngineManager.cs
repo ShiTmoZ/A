@@ -25,8 +25,7 @@ namespace AetherClient.Network
         // Cloudflare Anycast IPv4 ranges that must NEVER route into TUN
         private static readonly (string Network, string Mask)[] MasqueBypassSubnets =
         [
-            ("162.159.192.0", "255.255.192.0"),
-            ("188.114.96.0", "255.255.240.0")
+            ("162.159.192.0", "255.255.192.0")
         ];
 
         private readonly JobObjectManager _jobManager;
