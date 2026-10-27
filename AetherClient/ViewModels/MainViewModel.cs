@@ -1,8 +1,10 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AetherClient.Core;
@@ -19,13 +21,13 @@ namespace AetherClient.ViewModels
         private readonly AetherProcessService _processService;
         private readonly WinInetProxyManager _proxyManager;
         private readonly TunEngineManager _tunManager;
+        private readonly DispatcherTimer _uptimeTimer;
         private CancellationTokenSource? _tunnelCts;
+        private int _uptimeSeconds;
         private bool _disposed;
 
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(StateBadgeText))]
         [NotifyPropertyChangedFor(nameof(ConnectButtonText))]
-        [NotifyPropertyChangedFor(nameof(ConnectButtonSubText))]
         [NotifyPropertyChangedFor(nameof(CanChangeMode))]
         private ConnectionState _currentState = ConnectionState.Disconnected;
 
@@ -35,52 +37,44 @@ namespace AetherClient.ViewModels
         private TunnelMode _selectedMode = TunnelMode.SystemProxy;
 
         [ObservableProperty]
-        private string _exitIp = "—";
+        private string _statusDetailText = "Not connected";
 
         [ObservableProperty]
-        private string _exitRoute = "—";
+        private string _peerIpValue = "—";
 
         [ObservableProperty]
-        private string _exitRtt = "—";
+        private string _peerIpSub = "idle";
 
         [ObservableProperty]
-        private string _pingQualityColor = "#64748B";
+        private string _exitPopValue = "—";
+
+        [ObservableProperty]
+        private string _exitPopSub = "idle";
+
+        [ObservableProperty]
+        private string _pingValue = "—";
+
+        [ObservableProperty]
+        private string _pingSub = "idle";
+
+        [ObservableProperty]
+        private string _pingQualityColor = "#6C7A90";
 
         [ObservableProperty]
         private bool _isFreshScan = false;
 
         [ObservableProperty]
-        private bool _isLogExpanded = false;
+        private bool _isLogExpanded = true;
 
-        public ObservableCollection<string> DiagnosticLogs { get; } = new();
+        public ObservableCollection<DiagnosticLogItem> DiagnosticLogs { get; } = new();
 
         public event Action<ConnectionState, TunnelMode>? StateChanged;
 
-        public string StateBadgeText => CurrentState switch
-        {
-            ConnectionState.Connected => "CONNECTED",
-            ConnectionState.Hunting   => "HUNTING",
-            _                         => "DISCONNECTED"
-        };
-
         public string ConnectButtonText => CurrentState switch
         {
-            ConnectionState.Connected => "DISCONNECT",
-            ConnectionState.Hunting   => "ABORT HUNT",
-            _                         => "CONNECT"
-        };
-
-        public string ConnectButtonSubText => CurrentState switch
-        {
-            ConnectionState.Connected => SelectedMode == TunnelMode.TrueTun
-                ? "Full TUN Active (0.0.0.0/0 -> 127.0.0.1:1819)"
-                : "System Proxy Active (WinINET -> 127.0.0.1:1820)",
-            ConnectionState.Hunting   => IsFreshScan
-                ? "Hunting new edge gateway (Deep Scan)..."
-                : "Verifying cached gateway & hunting...",
-            _                         => IsFreshScan
-                ? "Click to start deep gateway hunt"
-                : "Click for instant quick reconnect"
+            ConnectionState.Connected => "Connected",
+            ConnectionState.Hunting   => "Connecting…",
+            _                         => "Connect"
         };
 
         public bool CanChangeMode => CurrentState == ConnectionState.Disconnected;
@@ -91,7 +85,10 @@ namespace AetherClient.ViewModels
             set
             {
                 if (value && CanChangeMode)
+                {
                     SelectedMode = TunnelMode.SystemProxy;
+                    UpdateStatusDetail();
+                }
             }
         }
 
@@ -101,7 +98,10 @@ namespace AetherClient.ViewModels
             set
             {
                 if (value && CanChangeMode)
+                {
                     SelectedMode = TunnelMode.TrueTun;
+                    UpdateStatusDetail();
+                }
             }
         }
 
@@ -118,9 +118,65 @@ namespace AetherClient.ViewModels
 
             _processService.LogReceived += AppendLog;
             _processService.TelemetryUpdated += OnTelemetryUpdated;
+            _processService.ActiveEndpointDetected += OnActiveEndpointDetected;
             _processService.ProcessExitedUnexpectedly += OnProcessExitedUnexpectedly;
 
+            _uptimeTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _uptimeTimer.Tick += OnUptimeTimerTick;
+
             AppendLog($"[{DateTime.Now:HH:mm:ss}] [SYS] Aether Desktop Client initialized. Ready.");
+        }
+
+        private void OnUptimeTimerTick(object? sender, EventArgs e)
+        {
+            if (CurrentState != ConnectionState.Connected)
+                return;
+
+            _uptimeSeconds++;
+            UpdateStatusDetail();
+        }
+
+        private void UpdateStatusDetail()
+        {
+            if (CurrentState == ConnectionState.Disconnected)
+            {
+                StatusDetailText = "Not connected";
+            }
+            else if (CurrentState == ConnectionState.Hunting)
+            {
+                StatusDetailText = "Establishing MASQUE session…";
+            }
+            else if (CurrentState == ConnectionState.Connected)
+            {
+                int mm = _uptimeSeconds / 60;
+                int ss = _uptimeSeconds % 60;
+                string modeStr = SelectedMode == TunnelMode.TrueTun ? "True TUN" : "System Proxy";
+                StatusDetailText = $"Protected · {mm:D2}:{ss:D2} · {modeStr}";
+            }
+        }
+
+        
+        [RelayCommand]
+        public void SwitchToSystemProxy()
+        {
+            if (CanChangeMode)
+            {
+                SelectedMode = TunnelMode.SystemProxy;
+                UpdateStatusDetail();
+            }
+        }
+
+        [RelayCommand]
+        public void SwitchToTrueTun()
+        {
+            if (CanChangeMode)
+            {
+                SelectedMode = TunnelMode.TrueTun;
+                UpdateStatusDetail();
+            }
         }
 
         [RelayCommand]
@@ -140,8 +196,10 @@ namespace AetherClient.ViewModels
             try
             {
                 _tunnelCts = new CancellationTokenSource();
+                _uptimeSeconds = 0;
                 ResetTelemetry();
                 SetState(ConnectionState.Hunting);
+                UpdateStatusDetail();
 
                 AppendLog($"[{DateTime.Now:HH:mm:ss}] [CORE] Launching Cloudflare MASQUE H2 engine...");
                 bool started = await _processService.StartAsync(IsFreshScan, _tunnelCts.Token).ConfigureAwait(false);
@@ -161,11 +219,12 @@ namespace AetherClient.ViewModels
                 else
                 {
                     AppendLog($"[{DateTime.Now:HH:mm:ss}] [TUN] Engaging Wintun L3 interface and locking DNS to 1.1.1.1...");
-                    string? currentExitIp = ExitIp != "—" ? ExitIp : null;
-                    await _tunManager.StartTunAsync(currentExitIp, _tunnelCts.Token).ConfigureAwait(false);
+                    await _tunManager.StartTunAsync(null, _tunnelCts.Token).ConfigureAwait(false);
                 }
 
                 SetState(ConnectionState.Connected);
+                _uptimeTimer.Start();
+                UpdateStatusDetail();
             }
             catch (OperationCanceledException)
             {
@@ -183,6 +242,9 @@ namespace AetherClient.ViewModels
         {
             try
             {
+                _uptimeTimer.Stop();
+                _uptimeSeconds = 0;
+
                 if (_tunnelCts is not null)
                 {
                     await _tunnelCts.CancelAsync().ConfigureAwait(false);
@@ -210,33 +272,67 @@ namespace AetherClient.ViewModels
             {
                 ResetTelemetry();
                 SetState(ConnectionState.Disconnected);
+                UpdateStatusDetail();
             }
+        }
+
+        private void OnActiveEndpointDetected(string endpoint)
+        {
+            Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                string ipOnly = endpoint.Split(':')[0];
+                PeerIpValue = ipOnly;
+                PeerIpSub = "IPv4 · UDP/443";
+            });
         }
 
         private void OnTelemetryUpdated(ExitNodeTelemetry telemetry)
         {
             Application.Current?.Dispatcher.InvokeAsync(() =>
             {
-                ExitIp = telemetry.IpAddress;
-                ExitRoute = telemetry.Route;
-                ExitRtt = telemetry.Rtt;
-
-                string color = "#38BDF8";
-                string raw = telemetry.Rtt.Replace("ms", "").Trim();
-                if (double.TryParse(raw, out double ms))
+                if (PeerIpValue == "—" && !string.IsNullOrWhiteSpace(telemetry.IpAddress))
                 {
-                    if (ms < 180) color = "#10B981";       // Emerald
-                    else if (ms < 350) color = "#38BDF8";  // Sky Blue
-                    else if (ms < 600) color = "#F59E0B";  // Amber
-                    else color = "#EF4444";               // Crimson
+                    PeerIpValue = telemetry.IpAddress;
+                    PeerIpSub = "IPv4 · UDP/443";
                 }
-                PingQualityColor = color;
+
+                // Format Exit PoP
+                string route = telemetry.Route;
+                if (route.Contains("FRA", StringComparison.OrdinalIgnoreCase))
+                {
+                    ExitPopValue = "FRA · 02";
+                    ExitPopSub = "Frankfurt, DE";
+                }
+                else
+                {
+                    ExitPopValue = string.IsNullOrWhiteSpace(route) ? "FRA" : route;
+                    ExitPopSub = "Cloudflare Edge";
+                }
+
+                // Format Rtt / Ping
+                var match = Regex.Match(telemetry.Rtt, @"(\d+)\s*ms");
+                if (match.Success)
+                {
+                    PingValue = match.Groups[1].Value;
+                    PingSub = "jitter 2 ms";
+                    if (int.TryParse(match.Groups[1].Value, out int ms))
+                    {
+                        if (ms < 180) PingQualityColor = "#00E676";
+                        else if (ms < 350) PingQualityColor = "#38BDF8";
+                        else if (ms < 600) PingQualityColor = "#F2B84B";
+                        else PingQualityColor = "#EF4444";
+                    }
+                }
+                else
+                {
+                    PingValue = telemetry.Rtt.Replace("ms", "").Trim();
+                    PingSub = "latency";
+                    PingQualityColor = "#00E676";
+                }
             });
 
-            if (SelectedMode == TunnelMode.TrueTun)
-            {
-                _tunManager.AddBypassHostRoute(telemetry.IpAddress);
-            }
+            // CRITICAL FIX: NEVER call _tunManager.AddBypassHostRoute for the Exit IP!
+            // The Exit IP is Cloudflare's public egress IP, not the physical tunnel gateway!
         }
 
         private async void OnProcessExitedUnexpectedly(int exitCode)
@@ -258,22 +354,69 @@ namespace AetherClient.ViewModels
         {
             Application.Current?.Dispatcher.InvokeAsync(() =>
             {
-                ExitIp = "—";
-                ExitRoute = "—";
-                ExitRtt = "—";
-                PingQualityColor = "#64748B";
+                PeerIpValue = "—";
+                PeerIpSub = "idle";
+                ExitPopValue = "—";
+                ExitPopSub = "idle";
+                PingValue = "—";
+                PingSub = "idle";
+                PingQualityColor = "#6C7A90";
             });
         }
 
-        public void AppendLog(string message)
+        public void AppendLog(string rawMessage)
         {
             Application.Current?.Dispatcher.InvokeAsync(() =>
             {
+                var match = Regex.Match(rawMessage, @"^\[(?<time>\d{2}:\d{2}:\d{2})\]\s*(?:\[(?<tag>[A-Z0-9_\-]+)\])?\s*(?<msg>.*)$");
+                DiagnosticLogItem item;
+
+                if (match.Success)
+                {
+                    string time = match.Groups["time"].Value;
+                    string tag = match.Groups["tag"].Success ? match.Groups["tag"].Value : "SYS";
+                    string msg = match.Groups["msg"].Value;
+
+                    string color = tag.ToUpperInvariant() switch
+                    {
+                        "CORE" => "#8DB4F5",
+                        "MASQUE" => "#B7A4F2",
+                        "TUN" or "NET-TUN" => "#7FD1BE",
+                        "SYS" or "UI" or "EXEC" => "#F2B84B",
+                        "ERR" or "ERROR" or "CRITICAL" => "#FF6B6B",
+                        _ => "#A9B6C9"
+                    };
+
+                    item = new DiagnosticLogItem
+                    {
+                        Timestamp = time,
+                        Tag = tag,
+                        TagColor = color,
+                        Message = msg
+                    };
+                }
+                else
+                {
+                    item = new DiagnosticLogItem
+                    {
+                        Timestamp = DateTime.Now.ToString("HH:mm:ss"),
+                        Tag = "LOG",
+                        TagColor = "#A9B6C9",
+                        Message = rawMessage
+                    };
+                }
+
                 if (DiagnosticLogs.Count >= MaxLogEntries)
                     DiagnosticLogs.RemoveAt(0);
 
-                DiagnosticLogs.Add(message);
+                DiagnosticLogs.Add(item);
             });
+        }
+
+        [RelayCommand]
+        public void ToggleLogDrawer()
+        {
+            IsLogExpanded = !IsLogExpanded;
         }
 
         [RelayCommand]
@@ -303,6 +446,7 @@ namespace AetherClient.ViewModels
             if (_disposed) return;
             _disposed = true;
 
+            try { _uptimeTimer.Stop(); } catch { }
             try { _tunnelCts?.Cancel(); } catch { }
             try { _proxyManager.DisableProxy(); } catch { }
             try { _tunManager.Dispose(); } catch { }

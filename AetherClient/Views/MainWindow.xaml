@@ -4,236 +4,88 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:models="clr-namespace:AetherClient.Models"
+        xmlns:viewmodels="clr-namespace:AetherClient.ViewModels"
         mc:Ignorable="d"
         Title="Aether MASQUE"
         Width="440"
         SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanMinimize"
+        WindowStyle="None"
+        AllowsTransparency="True"
         Background="Transparent"
-        Foreground="#EEF2F8"
-        FontFamily="Segoe UI Variable Display, Segoe UI, -apple-system, sans-serif"
+        ResizeMode="NoResize"
+        SnapsToDevicePixels="True"
         UseLayoutRounding="True"
-        SnapsToDevicePixels="True">
+        FontFamily="Segoe UI Variable Display, Segoe UI, Inter, sans-serif">
 
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="42"
+        <WindowChrome CaptionHeight="38"
                       CornerRadius="20"
-                      GlassFrameThickness="-1"
+                      GlassFrameThickness="0"
                       ResizeBorderThickness="0"
                       UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
-        <!-- Specular 125° Meniscus Edge Brushes (SetProduct Specification) -->
-        <LinearGradientBrush x:Key="MeniscusEdgeBrush" StartPoint="0,0" EndPoint="0.82,0.57">
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- 125-degree Meniscus Razor Specular Brushes -->
+        <LinearGradientBrush x:Key="MeniscusEdgeBrush" StartPoint="0.1,0.0" EndPoint="0.9,1.0">
             <GradientStop Color="#E6FFFFFF" Offset="0.0" />
-            <GradientStop Color="#38FFFFFF" Offset="0.24" />
+            <GradientStop Color="#24FFFFFF" Offset="0.24" />
             <GradientStop Color="#00FFFFFF" Offset="0.52" />
-            <GradientStop Color="#28FFFFFF" Offset="1.0" />
+            <GradientStop Color="#29FFFFFF" Offset="1.0" />
         </LinearGradientBrush>
 
-        <LinearGradientBrush x:Key="TileGlassSurfaceBrush" StartPoint="0,0" EndPoint="0.82,0.57">
+        <LinearGradientBrush x:Key="OuterGlassBrush" StartPoint="0.1,0.0" EndPoint="0.9,1.0">
             <GradientStop Color="#24FFFFFF" Offset="0.0" />
             <GradientStop Color="#09FFFFFF" Offset="0.38" />
             <GradientStop Color="#00FFFFFF" Offset="0.62" />
             <GradientStop Color="#0CFFFFFF" Offset="1.0" />
         </LinearGradientBrush>
 
-        <LinearGradientBrush x:Key="ActionPlateIdleSurface" StartPoint="0,0" EndPoint="0.82,0.57">
-            <GradientStop Color="#24FFFFFF" Offset="0.0" />
-            <GradientStop Color="#09FFFFFF" Offset="0.38" />
-            <GradientStop Color="#00FFFFFF" Offset="0.62" />
-            <GradientStop Color="#0CFFFFFF" Offset="1.0" />
-        </LinearGradientBrush>
-
-        <LinearGradientBrush x:Key="ActionPlateActiveSurface" StartPoint="0,0" EndPoint="0.82,0.57">
-            <GradientStop Color="#35FFFFFF" Offset="0.0" />
-            <GradientStop Color="#1000E676" Offset="0.40" />
-            <GradientStop Color="#0000E676" Offset="0.62" />
-            <GradientStop Color="#3000E676" Offset="1.0" />
-        </LinearGradientBrush>
-
-        <LinearGradientBrush x:Key="ActionPlateActiveMeniscus" StartPoint="0,0" EndPoint="0.82,0.57">
+        <LinearGradientBrush x:Key="EmeraldMeniscusBrush" StartPoint="0.1,0.0" EndPoint="0.9,1.0">
             <GradientStop Color="#F2FFFFFF" Offset="0.0" />
             <GradientStop Color="#8000E676" Offset="0.38" />
             <GradientStop Color="#2900E676" Offset="0.62" />
             <GradientStop Color="#CC00E676" Offset="1.0" />
         </LinearGradientBrush>
 
-        <!-- Color Tokens -->
-        <SolidColorBrush x:Key="InkMain" Color="#EEF2F8" />
-        <SolidColorBrush x:Key="InkSecondary" Color="#A9B6C9" />
-        <SolidColorBrush x:Key="InkMuted" Color="#8A9BB2" />
-        <SolidColorBrush x:Key="EmeraldActive" Color="#00E676" />
-        <SolidColorBrush x:Key="AmberConnecting" Color="#F2B84B" />
-        <SolidColorBrush x:Key="DotIdle" Color="#6C7A90" />
-        <SolidColorBrush x:Key="InnerScrimBg" Color="#DC04070C" />
+        <RadialGradientBrush x:Key="EmeraldPlateBgBrush" Center="0.88,1.08" GradientOrigin="0.88,1.08" RadiusX="0.9" RadiusY="0.9">
+            <GradientStop Color="#6600E676" Offset="0.0" />
+            <GradientStop Color="#1A00E676" Offset="0.6" />
+            <GradientStop Color="#00000000" Offset="1.0" />
+        </RadialGradientBrush>
 
-        <!-- Outer Glass Tile Style (5px padding around inner plate) -->
-        <Style x:Key="OuterGlassTile" TargetType="Border">
-            <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="Padding" Value="5" />
-            <Setter Property="Background" Value="{StaticResource TileGlassSurfaceBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource MeniscusEdgeBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-        </Style>
-
-        <!-- Inner Stabilized Scrim Plate Style (Dark Inset Plate) -->
-        <Style x:Key="InnerScrimPlate" TargetType="Border">
-            <Setter Property="CornerRadius" Value="9" />
-            <Setter Property="Background" Value="{StaticResource InnerScrimBg}" />
-            <Setter Property="Padding" Value="10,10,10,11" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#0DFFFFFF" />
-        </Style>
-
-        <Style x:Key="ScrimKeyLabel" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI, sans-serif" />
-            <Setter Property="FontSize" Value="9.5" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{StaticResource InkMuted}" />
-        </Style>
-
-        <Style x:Key="ScrimValueLabel" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
-            <Setter Property="FontSize" Value="11.5" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{StaticResource InkMain}" />
-        </Style>
-
-        <Style x:Key="ScrimSubLabel" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI, sans-serif" />
-            <Setter Property="FontSize" Value="10" />
-            <Setter Property="FontWeight" Value="Normal" />
-            <Setter Property="Foreground" Value="{StaticResource InkMuted}" />
-        </Style>
-
-        <!-- Titlebar 38x26 Recessed Pill Button -->
-        <Style x:Key="TitlebarPillBtn" TargetType="Button">
-            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
-            <Setter Property="Width" Value="38" />
-            <Setter Property="Height" Value="26" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Background" Value="#8C020408" />
-            <Setter Property="Foreground" Value="{StaticResource InkSecondary}" />
-            <Setter Property="BorderBrush" Value="#1AFFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="PillBd"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="13">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PillBd" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="PillBd" Property="Background" Value="#40FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="TitlebarClosePillBtn" TargetType="Button" BasedOn="{StaticResource TitlebarPillBtn}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="PillBd"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="13">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PillBd" Property="Background" Value="#C42B1C" />
-                                <Setter TargetName="PillBd" Property="BorderBrush" Value="#FF6060" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Segmented Routing Switch Option Button -->
-        <Style x:Key="SegmentedOptionBtn" TargetType="RadioButton">
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Grid>
-                            <!-- Selected Sliding Glass Thumb -->
-                            <Border x:Name="ThumbBd"
-                                    Margin="2"
-                                    CornerRadius="12"
-                                    Background="#35141C2A"
-                                    BorderBrush="{StaticResource MeniscusEdgeBrush}"
-                                    BorderThickness="1"
-                                    Visibility="Collapsed">
-                                <Border Margin="2"
-                                        CornerRadius="9"
-                                        Background="#9906090F"
-                                        BorderBrush="#10FFFFFF"
-                                        BorderThickness="1" />
-                            </Border>
-
-                            <!-- Option Content -->
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,6" />
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="ThumbBd" Property="Visibility" Value="Visible" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Diagnostic Pill Button (Copy/Clear) -->
-        <Style x:Key="PillMiniBtn" TargetType="Button">
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Background" Value="#20FFFFFF" />
-            <Setter Property="BorderBrush" Value="#25FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="{StaticResource InkMain}" />
+        <!-- Standard Pill Button Style (Copy / Clear) -->
+        <Style x:Key="PillButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1AFFFFFF" />
+            <Setter Property="Foreground" Value="#EEF2F8" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="11,4" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#26FFFFFF" />
+            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="PillBd"
+                        <Border x:Name="bd"
+                                CornerRadius="12"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="999"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PillBd" Property="Background" Value="#38FFFFFF" />
-                                <Setter TargetName="PillBd" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="bd" Property="Background" Value="#33FFFFFF" />
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#4DFFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="PillBd" Property="RenderTransform">
-                                    <Setter.Value>
-                                        <TranslateTransform Y="1" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="bd" Property="Background" Value="#0DFFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -241,238 +93,198 @@
             </Setter>
         </Style>
 
-        <!-- SetProduct Master 280x56 Action Plate Button -->
-        <Style x:Key="SetProductActionPlate" TargetType="Button">
-            <Setter Property="Width" Value="280" />
-            <Setter Property="Height" Value="56" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Background" Value="{StaticResource ActionPlateIdleSurface}" />
-            <Setter Property="BorderBrush" Value="{StaticResource MeniscusEdgeBrush}" />
+        <!-- Window Control Button (Min / Close) -->
+        <Style x:Key="WindowControlButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Background" Value="#8C020408" />
+            <Setter Property="BorderBrush" Value="#1FFFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <!-- Outer Glass Shell (CornerRadius 28) -->
-                        <Border x:Name="OuterShell"
+                        <Border x:Name="bd"
+                                CornerRadius="13"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="28">
-                            <Border.Effect>
-                                <DropShadowEffect Color="#96D2FF"
-                                                  BlurRadius="22"
-                                                  ShadowDepth="6"
-                                                  Opacity="0.16"
-                                                  Direction="270" />
-                            </Border.Effect>
-
-                            <!-- Inner Stabilized Scrim Plate (CornerRadius 23, Inset 5px) -->
-                            <Border x:Name="InnerPlate"
-                                    Margin="5"
-                                    CornerRadius="23"
-                                    Background="{StaticResource InnerScrimBg}"
-                                    BorderBrush="#10FFFFFF"
-                                    BorderThickness="1">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <!-- Power SVG Icon -->
-                                    <Viewbox Width="18" Height="18" Margin="0,0,10,0">
-                                        <Canvas Width="24" Height="24">
-                                            <Path x:Name="PowerLine"
-                                                  Data="M 12 3 L 12 11"
-                                                  Stroke="{StaticResource InkMain}"
-                                                  StrokeThickness="1.8"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round" />
-                                            <Path x:Name="PowerArc"
-                                                  Data="M 6.3 6.8 A 8 8 0 1 0 17.7 6.8"
-                                                  Stroke="{StaticResource InkMain}"
-                                                  StrokeThickness="1.8"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round" />
-                                        </Canvas>
-                                    </Viewbox>
-
-                                    <!-- Action Label -->
-                                    <TextBlock x:Name="PlateLabel"
-                                               Text="{Binding ConnectButtonText}"
-                                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                               FontSize="14.5"
-                                               FontWeight="SemiBold"
-                                               Foreground="{StaticResource InkMain}"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Border>
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
-
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="OuterShell" Property="BorderBrush" Value="#90FFFFFF" />
+                                <Setter TargetName="bd" Property="Background" Value="#33FFFFFF" />
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#4DFFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="OuterShell" Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.988" ScaleY="0.988" CenterX="140" CenterY="28" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="bd" Property="Background" Value="#1AFFFFFF" />
                             </Trigger>
-
-                            <!-- Hunting State -->
-                            <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                <Setter TargetName="OuterShell" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#F2B84B" BlurRadius="24" ShadowDepth="6" Opacity="0.4" Direction="270" />
-                                    </Setter.Value>
-                                </Setter>
-                            </DataTrigger>
-
-                            <!-- Connected State: Rich Emerald Caustic & Pure Green Text -->
-                            <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                <Setter TargetName="OuterShell" Property="Background" Value="{StaticResource ActionPlateActiveSurface}" />
-                                <Setter TargetName="OuterShell" Property="BorderBrush" Value="{StaticResource ActionPlateActiveMeniscus}" />
-                                <Setter TargetName="OuterShell" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#00E676" BlurRadius="30" ShadowDepth="6" Opacity="0.45" Direction="270" />
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter TargetName="InnerPlate" Property="Background" Value="#F0020605" />
-                                <Setter TargetName="InnerPlate" Property="BorderBrush" Value="#3800E676" />
-                                <Setter TargetName="PlateLabel" Property="Foreground" Value="{StaticResource EmeraldActive}" />
-                                <Setter TargetName="PowerLine" Property="Stroke" Value="{StaticResource EmeraldActive}" />
-                                <Setter TargetName="PowerArc" Property="Stroke" Value="{StaticResource EmeraldActive}" />
-                            </DataTrigger>
                         </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Close Button (Red hover) -->
+        <Style x:Key="CloseControlButtonStyle" TargetType="Button" BasedOn="{StaticResource WindowControlButtonStyle}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                CornerRadius="13"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#D9C42B1C" />
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#FFEF4444" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#80C42B1C" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Drawer Toggle Button -->
+        <Style x:Key="DrawerToggleButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Segmented Mode Option Button -->
+        <Style x:Key="SegmentOptionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                CornerRadius="12"
+                                Background="{TemplateBinding Background}"
+                                Padding="8,4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
     </Window.Resources>
 
-    <!-- Master Window Shell (Width 440, Margin 8 for DropShadow) -->
-    <Border Margin="8"
-            CornerRadius="20"
-            BorderBrush="{StaticResource MeniscusEdgeBrush}"
-            BorderThickness="1">
-        <!-- Outer Glass DropShadow & Caustic Rim -->
-        <Border.Effect>
-            <DropShadowEffect Color="#96D2FF" BlurRadius="28" ShadowDepth="6" Opacity="0.18" Direction="270" />
-        </Border.Effect>
+    <!-- Outer Frame Container with Padding -->
+    <Grid Margin="12">
+        <!-- Window Obsidian Floor & Lighting Emitters -->
+        <Border CornerRadius="20" Background="#F0080B11">
+            <Grid>
+                <!-- Cyan Radial Emitter (Top-Right: 88% 10%) -->
+                <Ellipse Width="240" Height="170"
+                         HorizontalAlignment="Right" VerticalAlignment="Top"
+                         Margin="0,-30,-40,0"
+                         IsHitTestVisible="False">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+                            <GradientStop Color="#424CC9F0" Offset="0.0" />
+                            <GradientStop Color="#004CC9F0" Offset="1.0" />
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
 
-        <!-- Multi-Layer Visual Surface -->
-        <Grid>
-            <!-- 1. Ambient Floor Background (Obsidian Base + Cyan Top-Right Glow + Violet Bottom-Left Glow) -->
-            <Border CornerRadius="20">
-                <Border.Background>
-                    <DrawingBrush TileMode="None">
-                        <DrawingBrush.Drawing>
-                            <DrawingGroup>
-                                <!-- Base Obsidian Floor (Translucent for DWM Acrylic) -->
-                                <GeometryDrawing Brush="#94080B11">
-                                    <GeometryDrawing.Geometry>
-                                        <RectangleGeometry Rect="0,0,440,640" />
-                                    </GeometryDrawing.Geometry>
-                                </GeometryDrawing>
+                <!-- Violet Radial Emitter (Bottom-Left: 6% 80%) -->
+                <Ellipse Width="280" Height="210"
+                         HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                         Margin="-60,0,0,-40"
+                         IsHitTestVisible="False">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+                            <GradientStop Color="#3DA878FF" Offset="0.0" />
+                            <GradientStop Color="#00A878FF" Offset="1.0" />
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+            </Grid>
+        </Border>
 
-                                <!-- Top-Right Ambient Cyan Glow -->
-                                <GeometryDrawing>
-                                    <GeometryDrawing.Brush>
-                                        <RadialGradientBrush Center="0.88,0.10" GradientOrigin="0.88,0.10" RadiusX="0.55" RadiusY="0.45">
-                                            <GradientStop Color="#424CC9F0" Offset="0.0" />
-                                            <GradientStop Color="#004CC9F0" Offset="1.0" />
-                                        </RadialGradientBrush>
-                                    </GeometryDrawing.Brush>
-                                    <GeometryDrawing.Geometry>
-                                        <RectangleGeometry Rect="0,0,440,640" />
-                                    </GeometryDrawing.Geometry>
-                                </GeometryDrawing>
+        <!-- Outer Glass Shell (SetProduct 2-Surface Architecture) -->
+        <Border CornerRadius="20"
+                Background="{StaticResource OuterGlassBrush}"
+                BorderBrush="{StaticResource MeniscusEdgeBrush}"
+                BorderThickness="1"
+                Padding="16,12,16,16">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="8" Direction="305" Opacity="0.5" />
+            </Border.Effect>
 
-                                <!-- Bottom-Left Ambient Violet Glow -->
-                                <GeometryDrawing>
-                                    <GeometryDrawing.Brush>
-                                        <RadialGradientBrush Center="0.06,0.80" GradientOrigin="0.06,0.80" RadiusX="0.65" RadiusY="0.50">
-                                            <GradientStop Color="#3DA878FF" Offset="0.0" />
-                                            <GradientStop Color="#00A878FF" Offset="1.0" />
-                                        </RadialGradientBrush>
-                                    </GeometryDrawing.Brush>
-                                    <GeometryDrawing.Geometry>
-                                        <RectangleGeometry Rect="0,0,440,640" />
-                                    </GeometryDrawing.Geometry>
-                                </GeometryDrawing>
-                            </DrawingGroup>
-                        </DrawingBrush.Drawing>
-                    </DrawingBrush>
-                </Border.Background>
-            </Border>
-
-            <!-- 2. Razor 1px Inset Meniscus Ring -->
-            <Border CornerRadius="19" Margin="1" BorderThickness="1" IsHitTestVisible="False">
-                <Border.BorderBrush>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0.82,0.57">
-                        <GradientStop Color="#8CFFFFFF" Offset="0.0" />
-                        <GradientStop Color="#25FFFFFF" Offset="0.30" />
-                        <GradientStop Color="#05FFFFFF" Offset="0.70" />
-                        <GradientStop Color="#14FFFFFF" Offset="1.0" />
-                    </LinearGradientBrush>
-                </Border.BorderBrush>
-            </Border>
-
-            <!-- 3. Real Interactive Content (Padding 20, 14, 20, 18) -->
-            <Grid Margin="20,14,20,18">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />  <!-- 0: Titlebar Header -->
-                    <RowDefinition Height="Auto" />  <!-- 1: Telemetry Grid -->
-                    <RowDefinition Height="Auto" />  <!-- 2: Action Zone -->
-                    <RowDefinition Height="Auto" />  <!-- 3: Segmented Switch -->
-                    <RowDefinition Height="*" />     <!-- 4: Diagnostic Drawer -->
-                </Grid.RowDefinitions>
-
-                <!-- Row 0: Titlebar Header (.tb) -->
-                <Grid Grid.Row="0" Height="38" Margin="0,0,0,14">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Orientation="Vertical">
+                <!-- 1. Custom TitleBar (Header) -->
+                <Grid Height="38" Margin="0,0,0,12" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Brand Name -->
                         <TextBlock Text="AETHER"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                                    FontSize="15"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource InkMain}"
+                                   FontWeight="ExtraBold"
+                                   Foreground="#EEF2F8"
                                    VerticalAlignment="Center" />
 
+                        <!-- Protocol Badge -->
                         <Border Margin="10,0,0,0"
-                                Padding="8,3"
-                                CornerRadius="999"
                                 Background="#C704070C"
                                 BorderBrush="#1AFFFFFF"
                                 BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="8,3"
                                 VerticalAlignment="Center">
                             <TextBlock Text="MASQUE // H2"
-                                       FontFamily="Cascadia Mono, Consolas, monospace"
                                        FontSize="9.5"
                                        FontWeight="SemiBold"
-                                       Foreground="{StaticResource InkSecondary}" />
+                                       Foreground="#A9B6C9"
+                                       LetterSpacing="1" />
                         </Border>
                     </StackPanel>
 
-                    <!-- Titlebar Controls: 38x26 Recessed Pills -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Style="{StaticResource TitlebarPillBtn}"
-                                Click="MinimizeButton_Click"
+                    <!-- Window Control Buttons (Min / Close) -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Style="{StaticResource WindowControlButtonStyle}"
                                 Margin="0,0,6,0"
-                                ToolTip="Minimize">
-                            <Path Data="M 0 0 L 8 0" Stroke="{StaticResource InkSecondary}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                Click="MinimizeButton_Click"
+                                ToolTip="Minimize to Taskbar">
+                            <Path Data="M 3 6 L 9 6"
+                                  Stroke="#EEF2F8"
+                                  StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round" />
                         </Button>
-                        <Button Style="{StaticResource TitlebarClosePillBtn}"
+
+                        <Button Style="{StaticResource CloseControlButtonStyle}"
                                 Click="HideToTrayButton_Click"
-                                ToolTip="Close to Tray">
-                            <Path Data="M 0 0 L 7 7 M 0 7 L 7 0" Stroke="{StaticResource InkSecondary}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                ToolTip="Minimize to System Tray">
+                            <Path Data="M 3 3 L 9 9 M 9 3 L 3 9"
+                                  Stroke="#EEF2F8"
+                                  StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round" />
                         </Button>
                     </StackPanel>
                 </Grid>
 
-                <!-- Row 1: Telemetry Cards (.grid: 3 equal 1fr columns) -->
-                <Grid Grid.Row="1" Margin="0,0,0,14">
+                <!-- 2. Telemetry Grid (3 Equal Tiles) -->
+                <Grid Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="10" />
@@ -482,113 +294,231 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Tile 1: Peer IP -->
-                    <Border Grid.Column="0" Style="{StaticResource OuterGlassTile}">
-                        <Border Style="{StaticResource InnerScrimPlate}">
-                            <StackPanel>
-                                <TextBlock Text="PEER IP" Style="{StaticResource ScrimKeyLabel}" />
-                                <TextBlock Text="{Binding ExitIp}" Style="{StaticResource ScrimValueLabel}" Margin="0,5,0,0" />
-                                <TextBlock Text="IPv4 · UDP/443" Style="{StaticResource ScrimSubLabel}" Margin="0,3,0,0" />
+                    <Border Grid.Column="0"
+                            CornerRadius="14"
+                            Background="{StaticResource OuterGlassBrush}"
+                            BorderBrush="{StaticResource MeniscusEdgeBrush}"
+                            BorderThickness="1"
+                            Padding="5">
+                        <Border CornerRadius="9"
+                                Background="#DB04070C"
+                                BorderBrush="#0DFFFFFF"
+                                BorderThickness="1"
+                                Padding="10,10,10,11">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="PEER IP"
+                                           FontSize="9.5"
+                                           FontWeight="Bold"
+                                           Foreground="#8A9BB2"
+                                           Margin="0,0,0,4" />
+                                <TextBlock Text="{Binding PeerIpValue}"
+                                           FontFamily="Cascadia Mono, Consolas, monospace"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="#EEF2F8"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding PeerIpSub}"
+                                           FontSize="10"
+                                           Foreground="#8A9BB2"
+                                           Margin="0,3,0,0" />
                             </StackPanel>
                         </Border>
                     </Border>
 
                     <!-- Tile 2: Exit PoP -->
-                    <Border Grid.Column="2" Style="{StaticResource OuterGlassTile}">
-                        <Border Style="{StaticResource InnerScrimPlate}">
-                            <StackPanel>
-                                <TextBlock Text="EXIT POP" Style="{StaticResource ScrimKeyLabel}" />
-                                <TextBlock Text="{Binding ExitRoute}" Style="{StaticResource ScrimValueLabel}" Margin="0,5,0,0" />
-                                <TextBlock Text="Frankfurt, DE" Style="{StaticResource ScrimSubLabel}" Margin="0,3,0,0" />
+                    <Border Grid.Column="2"
+                            CornerRadius="14"
+                            Background="{StaticResource OuterGlassBrush}"
+                            BorderBrush="{StaticResource MeniscusEdgeBrush}"
+                            BorderThickness="1"
+                            Padding="5">
+                        <Border CornerRadius="9"
+                                Background="#DB04070C"
+                                BorderBrush="#0DFFFFFF"
+                                BorderThickness="1"
+                                Padding="10,10,10,11">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="EXIT POP"
+                                           FontSize="9.5"
+                                           FontWeight="Bold"
+                                           Foreground="#8A9BB2"
+                                           Margin="0,0,0,4" />
+                                <TextBlock Text="{Binding ExitPopValue}"
+                                           FontFamily="Cascadia Mono, Consolas, monospace"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="#EEF2F8"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding ExitPopSub}"
+                                           FontSize="10"
+                                           Foreground="#8A9BB2"
+                                           Margin="0,3,0,0" />
                             </StackPanel>
                         </Border>
                     </Border>
 
                     <!-- Tile 3: Ping -->
-                    <Border Grid.Column="4" Style="{StaticResource OuterGlassTile}">
-                        <Border Style="{StaticResource InnerScrimPlate}">
-                            <StackPanel>
-                                <TextBlock Text="PING" Style="{StaticResource ScrimKeyLabel}" />
-                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding ExitRtt}"
+                    <Border Grid.Column="4"
+                            CornerRadius="14"
+                            Background="{StaticResource OuterGlassBrush}"
+                            BorderBrush="{StaticResource MeniscusEdgeBrush}"
+                            BorderThickness="1"
+                            Padding="5">
+                        <Border CornerRadius="9"
+                                Background="#DB04070C"
+                                BorderBrush="#0DFFFFFF"
+                                BorderThickness="1"
+                                Padding="10,10,10,11">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="PING"
+                                           FontSize="9.5"
+                                           FontWeight="Bold"
+                                           Foreground="#8A9BB2"
+                                           Margin="0,0,0,4" />
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding PingValue}"
                                                FontFamily="Cascadia Mono, Consolas, monospace"
-                                               FontSize="18"
+                                               FontSize="19"
                                                FontWeight="Bold"
-                                               Foreground="{StaticResource InkMain}" />
+                                               Foreground="#EEF2F8" />
+                                    <TextBlock Text=" ms"
+                                               FontFamily="Cascadia Mono, Consolas, monospace"
+                                               FontSize="11"
+                                               Foreground="#8A9BB2"
+                                               VerticalAlignment="Bottom"
+                                               Margin="0,0,0,2" />
+                                    <Ellipse Width="6" Height="6"
+                                             Fill="{Binding PingQualityColor}"
+                                             VerticalAlignment="Center"
+                                             Margin="6,0,0,0" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0" VerticalAlignment="Center">
-                                    <Ellipse Width="5" Height="5" Margin="0,0,5,0" VerticalAlignment="Center">
-                                        <Ellipse.Fill>
-                                            <SolidColorBrush Color="{Binding PingQualityColor}" />
-                                        </Ellipse.Fill>
-                                    </Ellipse>
-                                    <TextBlock Text="jitter 2 ms" Style="{StaticResource ScrimSubLabel}" />
-                                </StackPanel>
+                                <TextBlock Text="{Binding PingSub}"
+                                           FontSize="10"
+                                           Foreground="#8A9BB2"
+                                           Margin="0,3,0,0" />
                             </StackPanel>
                         </Border>
                     </Border>
                 </Grid>
 
-                <!-- Row 2: Action Zone (.act: Status Row + 280x56 Action Plate) -->
-                <StackPanel Grid.Row="2" Margin="0,0,0,14" HorizontalAlignment="Center">
-                    <!-- Status Row with Indicator Dot -->
+                <!-- 3. Master Action Zone (Status + 280x56 Connect Plate) -->
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="0,4,0,16">
+                    <!-- Status Row (Indicator Dot + Status Text) -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                        <!-- 7px Indicator Dot -->
-                        <Ellipse Width="7" Height="7" Margin="0,0,8,0" VerticalAlignment="Center">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="{StaticResource DotIdle}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                            <Setter Property="Fill" Value="{StaticResource AmberConnecting}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                            <Setter Property="Fill" Value="{StaticResource EmeraldActive}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
-
-                        <TextBlock FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                   FontSize="12.5"
+                        <Grid Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="#6C7A90">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
+                                                <Setter Property="Fill" Value="#00E676" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
+                                                <Setter Property="Fill" Value="#F2B84B" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                        </Grid>
+                        <TextBlock Text="{Binding StatusDetailText}"
+                                   FontSize="12"
                                    FontWeight="Medium"
-                                   Foreground="{StaticResource InkSecondary}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="Not connected" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
-                                            <Setter Property="Text" Value="Establishing MASQUE session…" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
-                                            <Setter Property="Text" Value="{Binding ConnectButtonSubText}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                                   Foreground="#A9B6C9"
+                                   VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- The 280x56 Master Action Plate -->
-                    <Button Style="{StaticResource SetProductActionPlate}"
+                    <!-- Master Action Button (280x56 Optical Glass Plate) -->
+                    <Button Width="280" Height="56"
                             Command="{Binding ToggleConnectionCommand}"
-                            Foreground="{StaticResource InkMain}" />
+                            Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="PlateOuter"
+                                        CornerRadius="28"
+                                        Padding="5"
+                                        Background="{StaticResource OuterGlassBrush}"
+                                        BorderBrush="{StaticResource MeniscusEdgeBrush}"
+                                        BorderThickness="1">
+                                    <Border.Effect>
+                                        <DropShadowEffect x:Name="PlateShadow"
+                                                          Color="#000000"
+                                                          BlurRadius="16"
+                                                          ShadowDepth="4"
+                                                          Opacity="0.4" />
+                                    </Border.Effect>
+
+                                    <!-- Inner Stabilized Scrim -->
+                                    <Border x:Name="PlateInner"
+                                            CornerRadius="23"
+                                            Background="#DB04070C"
+                                            BorderBrush="#0DFFFFFF"
+                                            BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                            <!-- Power Icon -->
+                                            <Path x:Name="PowerIcon"
+                                                  Data="M 10 2 L 10 10 M 4.3 4.8 A 8 8 0 1 0 15.7 4.8"
+                                                  Width="20" Height="20"
+                                                  Stretch="Uniform"
+                                                  Stroke="#EEF2F8"
+                                                  StrokeThickness="2"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  VerticalAlignment="Center" />
+
+                                            <!-- Connect Text -->
+                                            <TextBlock x:Name="PlateLabel"
+                                                       Text="{Binding ConnectButtonText}"
+                                                       FontSize="15"
+                                                       FontWeight="Bold"
+                                                       Foreground="#EEF2F8"
+                                                       VerticalAlignment="Center"
+                                                       Margin="10,0,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </Border>
+
+                                <ControlTemplate.Triggers>
+                                    <!-- Hunting State -->
+                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Hunting}">
+                                        <Setter TargetName="PowerIcon" Property="Stroke" Value="#F2B84B" />
+                                        <Setter TargetName="PlateLabel" Property="Foreground" Value="#F2B84B" />
+                                    </DataTrigger>
+
+                                    <!-- Connected State (Emerald Caustic Glow) -->
+                                    <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
+                                        <Setter TargetName="PlateOuter" Property="Background" Value="{StaticResource EmeraldPlateBgBrush}" />
+                                        <Setter TargetName="PlateOuter" Property="BorderBrush" Value="{StaticResource EmeraldMeniscusBrush}" />
+                                        <Setter TargetName="PlateShadow" Property="Color" Value="#00E676" />
+                                        <Setter TargetName="PlateShadow" Property="BlurRadius" Value="28" />
+                                        <Setter TargetName="PlateShadow" Property="Opacity" Value="0.45" />
+
+                                        <Setter TargetName="PlateInner" Property="Background" Value="#F0020605" />
+                                        <Setter TargetName="PlateInner" Property="BorderBrush" Value="#4000E676" />
+                                        <Setter TargetName="PowerIcon" Property="Stroke" Value="#00E676" />
+                                        <Setter TargetName="PlateLabel" Property="Foreground" Value="#00E676" />
+                                    </DataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
 
-                <!-- Row 3: Segmented Routing Switch (.seg: Height 64) -->
-                <Border Grid.Row="3"
-                        Height="64"
+                <!-- 4. Segmented Routing Switch (System Proxy / True TUN) -->
+                <Border Height="64"
                         Margin="0,0,0,14"
                         CornerRadius="20"
-                        Padding="5"
-                        Background="{StaticResource TileGlassSurfaceBrush}"
+                        Background="{StaticResource OuterGlassBrush}"
                         BorderBrush="{StaticResource MeniscusEdgeBrush}"
-                        BorderThickness="1">
-                    <!-- Inner Track (.track: CornerRadius 15) -->
+                        BorderThickness="1"
+                        Padding="5">
                     <Border CornerRadius="15"
-                            Background="{StaticResource InnerScrimBg}"
+                            Background="#DB04070C"
                             BorderBrush="#0DFFFFFF"
-                            BorderThickness="1">
+                            BorderThickness="1"
+                            Padding="3">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -596,135 +526,194 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- Option 1: System Proxy -->
-                            <RadioButton Grid.Column="0"
-                                         GroupName="ModeGroup"
-                                         IsChecked="{Binding IsSystemProxyMode, Mode=TwoWay}"
-                                         IsEnabled="{Binding CanChangeMode}"
-                                         Style="{StaticResource SegmentedOptionBtn}">
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="System Proxy"
-                                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                               FontSize="13"
-                                               FontWeight="SemiBold"
-                                               Foreground="{StaticResource InkMain}"
-                                               HorizontalAlignment="Center" />
-                                    <TextBlock Text="127.0.0.1:1820"
-                                               FontFamily="Cascadia Mono, Consolas, monospace"
-                                               FontSize="10.5"
-                                               FontWeight="Normal"
-                                               Foreground="{StaticResource InkMuted}"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,2,0,0" />
-                                </StackPanel>
-                            </RadioButton>
+                            <Button Grid.Column="0"
+                                    Command="{Binding SwitchToSystemProxyCommand}"
+                                    IsEnabled="{Binding CanChangeMode}"
+                                    Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="optBd"
+                                                            CornerRadius="12"
+                                                            Background="Transparent"
+                                                            Padding="8,4">
+                                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                            <TextBlock x:Name="t1" Text="System Proxy" FontSize="13" FontWeight="SemiBold" Foreground="#8A9BB2" HorizontalAlignment="Center" />
+                                                            <TextBlock x:Name="t2" Text="127.0.0.1:1820" FontFamily="Cascadia Mono, Consolas, monospace" FontSize="10.5" Foreground="#6C7A90" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSystemProxyMode}" Value="True">
+                                                            <Setter TargetName="optBd" Property="Background" Value="#8C141C2A" />
+                                                            <Setter TargetName="optBd" Property="BorderBrush" Value="#33FFFFFF" />
+                                                            <Setter TargetName="optBd" Property="BorderThickness" Value="1" />
+                                                            <Setter TargetName="t1" Property="Foreground" Value="#EEF2F8" />
+                                                            <Setter TargetName="t1" Property="FontWeight" Value="Bold" />
+                                                            <Setter TargetName="t2" Property="Foreground" Value="#A9B6C9" />
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
 
                             <!-- Option 2: True TUN -->
-                            <RadioButton Grid.Column="1"
-                                         GroupName="ModeGroup"
-                                         IsChecked="{Binding IsTrueTunMode, Mode=TwoWay}"
-                                         IsEnabled="{Binding CanChangeMode}"
-                                         Style="{StaticResource SegmentedOptionBtn}">
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="True TUN"
-                                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                               FontSize="13"
-                                               FontWeight="SemiBold"
-                                               Foreground="{StaticResource InkMain}"
-                                               HorizontalAlignment="Center" />
-                                    <TextBlock Text="Wintun L3"
-                                               FontFamily="Cascadia Mono, Consolas, monospace"
-                                               FontSize="10.5"
-                                               FontWeight="Normal"
-                                               Foreground="{StaticResource InkMuted}"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,2,0,0" />
-                                </StackPanel>
-                            </RadioButton>
+                            <Button Grid.Column="1"
+                                    Command="{Binding SwitchToTrueTunCommand}"
+                                    IsEnabled="{Binding CanChangeMode}"
+                                    Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="optBd"
+                                                            CornerRadius="12"
+                                                            Background="Transparent"
+                                                            Padding="8,4">
+                                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                            <TextBlock x:Name="t1" Text="True TUN" FontSize="13" FontWeight="SemiBold" Foreground="#8A9BB2" HorizontalAlignment="Center" />
+                                                            <TextBlock x:Name="t2" Text="Wintun L3" FontFamily="Cascadia Mono, Consolas, monospace" FontSize="10.5" Foreground="#6C7A90" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsTrueTunMode}" Value="True">
+                                                            <Setter TargetName="optBd" Property="Background" Value="#8C141C2A" />
+                                                            <Setter TargetName="optBd" Property="BorderBrush" Value="#33FFFFFF" />
+                                                            <Setter TargetName="optBd" Property="BorderThickness" Value="1" />
+                                                            <Setter TargetName="t1" Property="Foreground" Value="#EEF2F8" />
+                                                            <Setter TargetName="t1" Property="FontWeight" Value="Bold" />
+                                                            <Setter TargetName="t2" Property="Foreground" Value="#A9B6C9" />
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
                         </Grid>
                     </Border>
                 </Border>
 
-                <!-- Row 4: Diagnostic Drawer (.dr) -->
-                <Border Grid.Row="4"
-                        CornerRadius="18"
-                        Padding="5"
-                        Background="{StaticResource TileGlassSurfaceBrush}"
+                <!-- 5. Diagnostic Drawer (Collapsible) -->
+                <Border CornerRadius="18"
+                        Background="{StaticResource OuterGlassBrush}"
                         BorderBrush="{StaticResource MeniscusEdgeBrush}"
-                        BorderThickness="1">
+                        BorderThickness="1"
+                        Padding="5">
                     <Border CornerRadius="13"
-                            Background="{StaticResource InnerScrimBg}"
+                            Background="#DB04070C"
                             BorderBrush="#0DFFFFFF"
-                            BorderThickness="1">
-                        <Expander IsExpanded="{Binding IsLogExpanded, Mode=TwoWay}"
-                                  Background="Transparent"
-                                  BorderThickness="0"
-                                  Foreground="{StaticResource InkMain}">
-                            <Expander.Header>
-                                <Grid Width="360" Margin="4,2,0,2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                            BorderThickness="1"
+                            Padding="12,10">
+                        <StackPanel Orientation="Vertical">
+                            <!-- Drawer Header (ToggleButton + Copy / Clear) -->
+                            <Grid Height="28">
+                                <!-- Left: Diagnostics + Count Badge Toggle -->
+                                <ToggleButton Style="{StaticResource DrawerToggleButtonStyle}"
+                                              IsChecked="{Binding IsLogExpanded}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="M 2.5 4.5 L 6 8 L 9.5 4.5"
+                                              Width="10" Height="8"
+                                              Stretch="Uniform"
+                                              Stroke="#A9B6C9"
+                                              StrokeThickness="1.5"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              VerticalAlignment="Center" />
 
-                                    <!-- Diagnostics Label & Count Pill -->
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="Diagnostics"
-                                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                                   FontSize="12.5"
+                                                   FontSize="12"
                                                    FontWeight="SemiBold"
-                                                   Foreground="{StaticResource InkMain}"
+                                                   Foreground="#EEF2F8"
+                                                   Margin="6,0,8,0"
                                                    VerticalAlignment="Center" />
-                                        <Border Margin="8,0,0,0"
-                                                Padding="7,1"
-                                                CornerRadius="999"
-                                                Background="#12FFFFFF"
+
+                                        <Border Background="#26FFFFFF"
+                                                CornerRadius="9"
+                                                Padding="6,1"
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="{Binding DiagnosticLogs.Count}"
-                                                       FontFamily="Cascadia Mono, Consolas, monospace"
                                                        FontSize="10"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{StaticResource InkSecondary}" />
+                                                       FontWeight="Bold"
+                                                       Foreground="#A9B6C9" />
                                         </Border>
                                     </StackPanel>
+                                </ToggleButton>
 
-                                    <!-- Action Pills: Copy & Clear -->
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button Style="{StaticResource PillMiniBtn}"
-                                                Content="Copy"
-                                                Command="{Binding CopyLogsCommand}"
-                                                Margin="0,0,6,0" />
-                                        <Button Style="{StaticResource PillMiniBtn}"
-                                                Content="Clear"
-                                                Command="{Binding ClearLogsCommand}" />
-                                    </StackPanel>
-                                </Grid>
-                            </Expander.Header>
+                                <!-- Right: Copy & Clear Buttons -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource PillButtonStyle}"
+                                            Command="{Binding CopyLogsCommand}"
+                                            Margin="0,0,6,0">
+                                        <TextBlock Text="Copy" />
+                                    </Button>
 
-                            <!-- Terminal Monospace Log Area -->
-                            <Border Margin="6,4,6,6"
-                                    Height="130"
-                                    CornerRadius="11"
-                                    Background="#CC020408"
-                                    BorderBrush="#10FFFFFF"
+                                    <Button Style="{StaticResource PillButtonStyle}"
+                                            Command="{Binding ClearLogsCommand}">
+                                        <TextBlock Text="Clear" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Terminal Console Box -->
+                            <Border Margin="0,10,0,0"
+                                    Height="135"
+                                    CornerRadius="10"
+                                    Background="#D9020408"
+                                    BorderBrush="#0FFFFFFF"
                                     BorderThickness="1"
-                                    Padding="10,8">
+                                    Padding="8,6"
+                                    Visibility="{Binding IsLogExpanded, Converter={StaticResource BoolToVis}}">
                                 <ListBox x:Name="LogListBox"
                                          ItemsSource="{Binding DiagnosticLogs}"
                                          Background="Transparent"
                                          BorderThickness="0"
-                                         Foreground="#C5CEDB"
-                                         FontFamily="Cascadia Mono, Consolas, monospace"
-                                         FontSize="10.5"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                         VirtualizingPanel.IsVirtualizing="True"
-                                         VirtualizingPanel.VirtualizationMode="Recycling" />
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0" />
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="BorderThickness" Value="0" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <ContentPresenter />
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:DiagnosticLogItem}">
+                                            <TextBlock FontFamily="Cascadia Mono, Consolas, monospace"
+                                                       FontSize="10.5"
+                                                       LineHeight="16"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,1.5">
+                                                <Run Text="{Binding Timestamp, Mode=OneWay}" Foreground="#7F8DA3" />
+                                                <Run Text=" " />
+                                                <Run Text="{Binding Tag, Mode=OneWay}" Foreground="{Binding TagColor, Mode=OneWay}" FontWeight="SemiBold" />
+                                                <Run Text=" " />
+                                                <Run Text="{Binding Message, Mode=OneWay}" Foreground="#C5CEDB" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
                             </Border>
-                        </Expander>
+                        </StackPanel>
                     </Border>
                 </Border>
-
-            </Grid>
-        </Grid>
-    </Border>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Window>
