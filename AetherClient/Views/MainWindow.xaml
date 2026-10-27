@@ -254,7 +254,7 @@
                                        FontSize="9.5"
                                        FontWeight="SemiBold"
                                        Foreground="#A9B6C9"
-                                       LetterSpacing="1" />
+                                        />
                         </Border>
                     </StackPanel>
 
