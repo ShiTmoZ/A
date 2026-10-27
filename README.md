@@ -1,61 +1,59 @@
-# ⚡ Cloudflare WARP (MASQUE Edition)
+# ⚡ Cloudflare WARP — MASQUE Edition (v1.0.34)
 
-> Lightweight, high-performance native Windows client for **Cloudflare WARP** over **MASQUE HTTP/2 (RFC 9298)**, engineered for zero-DNS-leak censorship bypass on restricted networks (Iran TCI, MCI, Irancell).
+> Production-grade, zero-leak native Windows client for **Cloudflare WARP** over **MASQUE HTTP/2 (RFC 9298)**, engineered for resilient DPI censorship bypass on heavily filtered networks (Iran TCI, MCI, Irancell).
 
-<p align="center">
-  <img src="assets/preview.jpg" alt="Cloudflare WARP MASQUE Client Preview" width="800" />
-</p>
+[![Release](https://img.shields.io/github/v/release/ShiTmoZ/A?color=00E676&label=Release&style=flat-square)](https://github.com/ShiTmoZ/A/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20x64%20(10%2F11)-blue?style=flat-square)](#)
+[![Protocol](https://img.shields.io/badge/Protocol-MASQUE%20H2%20(RFC%209298)-purple?style=flat-square)](#)
+[![UI](https://img.shields.io/badge/Design-SetProduct%20Liquid%20Glass-00E676?style=flat-square)](#)
 
 ---
 
-### ✨ Features
+### ✨ Core Capabilities
 
-- **MASQUE HTTP/2 Protocol**: Routes Cloudflare WARP through `CONNECT-IP` (RFC 9298) over standard HTTP/2, completely bypassing UDP filtering and SNI blocks.
+- **MASQUE over HTTP/2 (RFC 9298)**:
+  Encapsulates Cloudflare WARP through `CONNECT-IP` on connection-oriented HTTP/2 (TCP port 443). Eliminates UDP drops, handshake throttle, and SNI censorship on DPI firewalls.
+- **SetProduct Liquid Glass Optical Material**:
+  - High-precision 440px floating chassis with locked 125° specular meniscus lighting.
+  - Deep obsidian scrim floor (`#080B11`) with dual ambient radiance amplifiers (Cyan `#4CC9F0` & Violet `#A878FF`).
+  - Master Caustic Glass Plate (280×56) with emerald active glow (`#00E676`) and live connection telemetry.
+  - Collapsible semantic diagnostics console with color-coded tag telemetry (`#8DB4F5` CORE, `#B7A4F2` MASQUE, `#7FD1BE` TUN).
 - **Dual Routing Architecture**:
-  - 🛡️ **True TUN (Wintun)**: Full layer-3 kernel adapter tunneling all system TCP/UDP traffic and games, with automatic DNS anti-poisoning locked to `1.1.1.1`.
-  - 🌐 **System Proxy (WinINET)**: Instant zero-overhead HTTP/HTTPS CONNECT proxy on `127.0.0.1:1820` for all Windows browsers (Brave, Chrome, Edge).
-- **Smart Reconnection**: Sub-300ms instant reconnect using cached healthy edge gateways, with auto-fallback to turbo scanning across 2,000+ IP candidates.
-- **Zero-Orphan Process Management**: Native Win32 Kernel Job Objects ensure clean teardown of child engines and routing tables on exit.
-- **Fluent Cyber UI**: Hardware-accelerated WPF dark interface with pulsing radar animations and real-time telemetry.
+  - 🛡️ **True TUN (Kernel Wintun L3)**: Low-latency virtual adapter tunneling all system IPv4 UDP/TCP traffic, games, and Telegram Desktop. Features automatic Anycast CIDR pinning (`162.159.192.0/18` & `188.114.96.0/20`) preventing routing loops.
+  - 🌐 **System Proxy (WinINET)**: Instant zero-overhead proxy on `127.0.0.1:1820` for browsers (Brave, Chrome, Edge) with automatic DNS cache flushing.
+- **Zero-Poisoning DNS Shield**:
+  Dynamically locks adapter DNS to `1.1.1.1` and `1.0.0.1`, completely deflecting ISP DNS spoofing and sinkhole hijacking (such as `10.10.34.34`). Restores automatically to DHCP on disconnect.
+- **Active TCP Socket Probe**:
+  Replaces fragile stdout string parsing with non-blocking kernel socket checks on `127.0.0.1:1820`, locking connection state in <450ms.
+- **Kernel Job Object Hygiene**:
+  Binds child daemons (`aether.exe` and `tun2socks.exe`) to Windows Job Objects with `KILL_ON_JOB_CLOSE`, ensuring zero zombie background processes on exit or system reboot.
 
 ---
 
 ### 🛡️ Why MASQUE Works Against Severe DPI & Censorship
 
-National firewalls and ISP Deep Packet Inspection (DPI) engines employ three primary mechanisms to disrupt circumvention tools. MASQUE (RFC 9298) systematically neutralizes all three layers:
-
-#### 1. Overcoming the UDP & WireGuard Deadlock
-- **The Problem**: Standard Cloudflare WARP (the official 1.1.1.1 client) operates over UDP-based WireGuard. Restrictive ISPs enforce aggressive UDP rate-limiting, random packet dropping, and port blacklisting, rendering raw WireGuard unstable or completely blocked.
-- **The MASQUE Solution**: MASQUE encapsulates the entire tunnel data plane into a reliable, connection-oriented **HTTP/2 (TCP) transport on standard TLS port 443**. ISPs cannot throttle or drop TCP port 443 without simultaneously breaking thousands of domestic financial, governmental, and commercial services hosted behind Cloudflare's Anycast CDN.
-
-#### 2. Stealth via Standard Web Requests (`CONNECT-IP`)
-- Rather than exposing identifiable VPN handshakes or protocol headers, the client establishes an authentic TLS session directly to Cloudflare's Anycast edge and issues a standardized proxy request:
-  ```http
-  CONNECT /.well-known/masque/ip/172.16.0.2/ HTTP/2
-  Host: cloudflareaccess.com
-  ```
-- Cloudflare’s edge responds with `HTTP/2 200 OK`. From that moment onward, all bidirectional IP frames are multiplexed inside what appears to the DPI as an ordinary, encrypted HTTPS browsing stream. No identifiable VPN signatures or heuristic fingerprints are visible on the wire.
-
-#### 3. Immune to DNS Poisoning (Zero-Leak Architecture)
-- Restrictive ISPs routinely hijack and poison unencrypted UDP port 53 DNS queries, returning blackhole or filtering sinkhole IPs (e.g., `10.10.34.34`).
-- In this client:
-  - **In System Proxy Mode**: Browsers issue standard `CONNECT <domain>:443` requests directly to `127.0.0.1:1820`. Domain names are resolved remotely by Cloudflare's recursive resolvers inside the Frankfurt egress node—local DNS is never queried.
-  - **In True TUN Mode**: The client automatically rebinds physical adapter DNS to `1.1.1.1` and tunnels all port 53 datagrams through the encrypted Wintun interface, completely isolating queries from ISP surveillance and spoofing.
+| Threat Vector | Standard WireGuard / 1.1.1.1 Client | Aether MASQUE Client (v1.0.34) |
+| :--- | :--- | :--- |
+| **UDP Rate-Limiting & Blacklisting** | Blocks initial UDP handshake; drops WireGuard packets. | Encapsulated in standard TCP TLS 443; indistinguishable from regular HTTPS web traffic. |
+| **ISP DNS Poisoning & Sinkholing** | ISP returns fake IP (e.g. `10.10.34.34`) on port 53. | Queries are routed inside the encrypted tunnel or resolved remotely via Cloudflare edge. |
+| **Routing Loop & Adapter Conflict** | Manual route commands easily break when Hyper-V or WSL is present. | Dynamic adapter discovery finds physical gateway and pins Cloudflare CIDRs explicitly. |
+| **Crash Recovery** | System proxy or routing tables remain broken after sudden reboot. | `OrphanStateSanitizer` cleans and restores WinINET registry & routes on every launch. |
 
 ---
 
 ### 🚀 Quick Start
 
-1. Download the latest release from [Releases](https://github.com/ShiTmoZ/A/releases).
+1. Download the latest release: [AetherClient-Windows-x64.zip](https://github.com/ShiTmoZ/A/releases/latest).
 2. Extract the archive into a dedicated folder.
 3. Run `AetherClient.exe` as **Administrator**.
-4. Select your preferred mode (**True TUN** or **System Proxy**) and click **CONNECT**.
+4. Choose **True TUN** or **System Proxy** and click the central power plate.
 
 ---
 
 ### 🛠️ Build from Source
 
+Requirements: .NET 8 SDK on Windows x64.
+
 ```powershell
 dotnet publish AetherClient\AetherClient.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o .\publish
 ```
-Place `aether.exe`, `wintun.dll`, `tun2socks.exe`, and `aether-masque.toml` alongside `AetherClient.exe`.
