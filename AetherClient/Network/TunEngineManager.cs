@@ -98,7 +98,7 @@ namespace AetherClient.Network
 
             // 4. Configure static IP, Netmask, Gateway, and DNS on wintun adapter
             await RunCommandAsync("netsh", $"interface ip set address name=\"{AdapterName}\" source=static addr={TunAddress} mask={TunNetmask} gateway={TunGateway} gwmetric=1", cancellationToken).ConfigureAwait(false);
-            await RunCommandAsync("netsh", $"interface ipv4 set interface \"{AdapterName}\" metric=1 mtu=1400", cancellationToken).ConfigureAwait(false);
+            await RunCommandAsync("netsh", $"interface ipv4 set interface \"{AdapterName}\" metric=1 mtu=1360", cancellationToken).ConfigureAwait(false);
             await RunCommandAsync("netsh", $"interface ip set dns name=\"{AdapterName}\" static {PrimaryDns} validate=no", cancellationToken).ConfigureAwait(false);
             await RunCommandAsync("netsh", $"interface ip add dns name=\"{AdapterName}\" 1.0.0.1 index=2 validate=no", cancellationToken).ConfigureAwait(false);
 

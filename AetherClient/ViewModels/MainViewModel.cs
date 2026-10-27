@@ -480,6 +480,22 @@ namespace AetherClient.ViewModels
                 coreMsg = "socks5 listening · 127.0.0.1:1819";
             else if (raw.Contains("http proxy listening"))
                 coreMsg = "http proxy listening · 127.0.0.1:1820";
+            else if (raw.Contains("Clean IP radar"))
+            {
+                if (raw.Contains("selected fastest edge"))
+                {
+                    var m = Regex.Match(raw, @"selected fastest edge\s*([0-9\.:]+)\s*\(RTT:\s*([0-9]+ms)\)");
+                    coreMsg = m.Success ? $"clean IP radar: selected {m.Groups[1].Value} · rtt {m.Groups[2].Value}" : "clean IP radar: fast edge selected";
+                }
+                else if (raw.Contains("probing"))
+                {
+                    coreMsg = "clean IP radar: probing candidate edges in parallel";
+                }
+                else
+                {
+                    coreMsg = "clean IP radar: dynamic scan fallback";
+                }
+            }
             else if (raw.Contains("scan mode=turbo"))
                 coreMsg = "dialing edge · turbo probe (concurrency=20)";
             else if (raw.Contains("loaded existing masque identity"))

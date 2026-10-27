@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
@@ -16,6 +18,19 @@ namespace AetherClient.Core
         public const string LocalProxyHost = "127.0.0.1";
         public const int LocalHttpProxyPort = 1820;
         public const int LocalSocksProxyPort = 1819;
+
+        private static readonly string[] DefaultCleanEdges =
+        [
+            "188.114.97.3:443",
+            "188.114.96.3:443",
+            "188.114.98.2:443",
+            "188.114.99.1:443",
+            "162.159.192.1:443",
+            "162.159.193.5:443",
+            "162.159.198.198:443",
+            "162.159.198.4:443",
+            "162.159.198.65:443"
+        ];
 
         [GeneratedRegex(@"masque(?:-in-masque)? exit:\s*([^,]+),\s*([^,]+),\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
         private static partial Regex MasqueExitRegex();
@@ -80,9 +95,18 @@ namespace AetherClient.Core
                 _isStopping = false;
                 _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-                string scanFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
-                string arguments = $"--masque --h2 -4 --turbo {scanFlag} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
-                ActivePeer = "Auto (Turbo)";
+                string? fastestPeer = null;
+                if (!forceFreshScan)
+                {
+                    fastestPeer = await FindFastestPeerAsync(_cts.Token).ConfigureAwait(false);
+                }
+
+                string peerArg = !string.IsNullOrWhiteSpace(fastestPeer)
+                    ? $"--h2-peer {fastestPeer}"
+                    : "--scan balanced --no-quick-reconnect";
+
+                string arguments = $"--masque --h2 -4 --perf high {peerArg} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
+                ActivePeer = fastestPeer ?? "Auto (Balanced)";
                 EmitLog($"[EXEC] {ExecutableName} {arguments}");
 
                 var psi = new ProcessStartInfo
@@ -331,6 +355,90 @@ namespace AetherClient.Core
                 TunnelStateChanged?.Invoke(false);
                 ProcessExitedUnexpectedly?.Invoke(exitCode);
             }
+        }
+
+                private List<string> LoadCleanIpCandidates()
+        {
+            var list = new List<string>();
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "clean_ips.txt");
+            if (File.Exists(path))
+            {
+                try
+                {
+                    foreach (var line in File.ReadAllLines(path))
+                    {
+                        string trimmed = line.Trim();
+                        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith('#') || trimmed.StartsWith(';'))
+                            continue;
+
+                        string rawEp = trimmed;
+                        int pipeIdx = rawEp.IndexOf('|');
+                        if (pipeIdx > 0)
+                            rawEp = rawEp[..pipeIdx].Trim();
+
+                        if (!rawEp.Contains(':'))
+                            rawEp += ":443";
+
+                        if (!list.Contains(rawEp, StringComparer.OrdinalIgnoreCase))
+                            list.Add(rawEp);
+                    }
+                }
+                catch { }
+            }
+
+            foreach (var def in DefaultCleanEdges)
+            {
+                if (!list.Contains(def, StringComparer.OrdinalIgnoreCase))
+                    list.Add(def);
+            }
+
+            return list;
+        }
+
+        private async Task<string?> FindFastestPeerAsync(CancellationToken ct)
+        {
+            var candidates = LoadCleanIpCandidates();
+            if (candidates.Count == 0) return null;
+
+            EmitLog($"[SYS] Clean IP radar: probing {candidates.Count} candidate edges in parallel...");
+
+            using var probeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            probeCts.CancelAfter(600);
+
+            var tasks = candidates.Select(async ep =>
+            {
+                try
+                {
+                    var sw = Stopwatch.StartNew();
+                    using var tcp = new TcpClient();
+                    var colon = ep.IndexOf(':');
+                    string host = colon > 0 ? ep[..colon] : ep;
+                    int port = colon > 0 && int.TryParse(ep[(colon + 1)..], out int p) ? p : 443;
+
+                    using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(probeCts.Token);
+                    connectCts.CancelAfter(450);
+
+                    await tcp.ConnectAsync(host, port, connectCts.Token).ConfigureAwait(false);
+                    sw.Stop();
+                    return (Endpoint: ep, RttMs: sw.ElapsedMilliseconds, Success: true);
+                }
+                catch
+                {
+                    return (Endpoint: ep, RttMs: 9999L, Success: false);
+                }
+            }).ToList();
+
+            var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+            var best = results.Where(r => r.Success).OrderBy(r => r.RttMs).FirstOrDefault();
+
+            if (best.Success && best.RttMs < 9999)
+            {
+                EmitLog($"[SYS] Clean IP radar: selected fastest edge {best.Endpoint} (RTT: {best.RttMs}ms)");
+                return best.Endpoint;
+            }
+
+            EmitLog("[SYS] Clean IP radar: probe timed out; falling back to dynamic balanced scan.");
+            return null;
         }
 
         private static string ResolveBinaryPath()
