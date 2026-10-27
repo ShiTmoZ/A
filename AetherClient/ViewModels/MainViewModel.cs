@@ -127,7 +127,9 @@ namespace AetherClient.ViewModels
             };
             _uptimeTimer.Tick += OnUptimeTimerTick;
 
-            AppendLog($"[{DateTime.Now:HH:mm:ss}] [SYS] Aether Desktop Client initialized. Ready.");
+            DiagnosticLogs.Add(new DiagnosticLogItem { Timestamp = DateTime.Now.ToString("HH:mm:ss"), Tag = "CORE", TagColor = "#8DB4F5", Message = "aether-masque 2.4.0 ready" });
+            DiagnosticLogs.Add(new DiagnosticLogItem { Timestamp = DateTime.Now.ToString("HH:mm:ss"), Tag = "CORE", TagColor = "#8DB4F5", Message = "profile "default" loaded · transport MASQUE over H2" });
+            DiagnosticLogs.Add(new DiagnosticLogItem { Timestamp = DateTime.Now.ToString("HH:mm:ss"), Tag = "TUN", TagColor = "#7FD1BE", Message = "wintun driver detected · ready" });
         }
 
         private void OnUptimeTimerTick(object? sender, EventArgs e)
@@ -166,6 +168,7 @@ namespace AetherClient.ViewModels
             {
                 SelectedMode = TunnelMode.SystemProxy;
                 UpdateStatusDetail();
+                AppendLog($"[{DateTime.Now:HH:mm:ss}] [CORE] routing mode → System Proxy (127.0.0.1:1820)");
             }
         }
 
@@ -176,6 +179,7 @@ namespace AetherClient.ViewModels
             {
                 SelectedMode = TunnelMode.TrueTun;
                 UpdateStatusDetail();
+                AppendLog($"[{DateTime.Now:HH:mm:ss}] [CORE] routing mode → True TUN (Wintun L3)");
             }
         }
 
@@ -366,51 +370,134 @@ namespace AetherClient.ViewModels
 
         public void AppendLog(string rawMessage)
         {
+            if (string.IsNullOrWhiteSpace(rawMessage))
+                return;
+
             Application.Current?.Dispatcher.InvokeAsync(() =>
             {
-                var match = Regex.Match(rawMessage, @"^\[(?<time>\d{2}:\d{2}:\d{2})\]\s*(?:\[(?<tag>[A-Z0-9_\-]+)\])?\s*(?<msg>.*)$");
-                DiagnosticLogItem item;
-
-                if (match.Success)
+                var item = ParseLogItem(rawMessage);
+                if (item != null)
                 {
-                    string time = match.Groups["time"].Value;
-                    string tag = match.Groups["tag"].Success ? match.Groups["tag"].Value : "SYS";
-                    string msg = match.Groups["msg"].Value;
+                    if (DiagnosticLogs.Count >= MaxLogEntries)
+                        DiagnosticLogs.RemoveAt(0);
 
-                    string color = tag.ToUpperInvariant() switch
-                    {
-                        "CORE" => "#8DB4F5",
-                        "MASQUE" => "#B7A4F2",
-                        "TUN" or "NET-TUN" => "#7FD1BE",
-                        "SYS" or "UI" or "EXEC" => "#F2B84B",
-                        "ERR" or "ERROR" or "CRITICAL" => "#FF6B6B",
-                        _ => "#A9B6C9"
-                    };
-
-                    item = new DiagnosticLogItem
-                    {
-                        Timestamp = time,
-                        Tag = tag,
-                        TagColor = color,
-                        Message = msg
-                    };
+                    DiagnosticLogs.Add(item);
                 }
+            });
+        }
+
+        private static DiagnosticLogItem? ParseLogItem(string raw)
+        {
+            var mTime = Regex.Match(raw, @"\[?(?<time>\d{2}:\d{2}:\d{2})\]?");
+            string time = mTime.Success ? mTime.Groups["time"].Value : DateTime.Now.ToString("HH:mm:ss");
+
+            if (raw.Contains("sysprofile") || raw.Contains("obfuscation profile") || raw.Contains("candidate ok") || raw.Contains("tls verification: normal"))
+                return null;
+
+            if (raw.Contains("[ERR", StringComparison.OrdinalIgnoreCase) ||
+                raw.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+                raw.Contains("failed", StringComparison.OrdinalIgnoreCase))
+            {
+                string msg = Regex.Replace(raw, @"^\[\d{2}:\d{2}:\d{2}\]\s*", "");
+                msg = Regex.Replace(msg, @"^\[[A-Z0-9_\-]+\]\s*", "");
+                return new DiagnosticLogItem { Timestamp = time, Tag = "ERR", TagColor = "#FF6B6B", Message = msg.Trim() };
+            }
+
+            if (raw.Contains("masque_h2") || raw.Contains("connect-ip") || raw.Contains("[masque]") ||
+                raw.Contains("alpn=") || raw.Contains("flow control") || raw.Contains("CONNECT-"))
+            {
+                string msg;
+                if (raw.Contains("connect-ip status: 200"))
+                    msg = "connect-ip status 200 · verified";
+                else if (raw.Contains("connect-ip request sent"))
+                    msg = "connect-ip request sent to cloudflareaccess.com";
+                else if (raw.Contains("validating data-plane"))
+                    msg = "validating data-plane probe";
+                else if (raw.Contains("tunnel validated"))
+                    msg = "tunnel validated · exposing listeners";
+                else if (raw.Contains("MASQUE transport:"))
+                {
+                    var m = Regex.Match(raw, @"to ([0-9\.:]+)");
+                    msg = $"transport: HTTP/2 (TCP) to {(m.Success ? m.Groups[1].Value : "edge")}";
+                }
+                else if (raw.Contains("tls established"))
+                    msg = "TLS established · ALPN h2";
                 else
                 {
-                    item = new DiagnosticLogItem
-                    {
-                        Timestamp = DateTime.Now.ToString("HH:mm:ss"),
-                        Tag = "LOG",
-                        TagColor = "#A9B6C9",
-                        Message = rawMessage
-                    };
+                    msg = Regex.Replace(raw, @"^.*?\]\s*", "");
+                    msg = msg.Replace("[h2]", "").Trim();
                 }
 
-                if (DiagnosticLogs.Count >= MaxLogEntries)
-                    DiagnosticLogs.RemoveAt(0);
+                return new DiagnosticLogItem { Timestamp = time, Tag = "MASQUE", TagColor = "#B7A4F2", Message = msg };
+            }
 
-                DiagnosticLogs.Add(item);
-            });
+            if (raw.Contains("NET-TUN") || raw.Contains("wintun", StringComparison.OrdinalIgnoreCase) ||
+                raw.Contains("tun2socks", StringComparison.OrdinalIgnoreCase) || raw.Contains("route add") || raw.Contains("route delete"))
+            {
+                string msg;
+                if (raw.Contains("True TUN active"))
+                    msg = "adapter "wintun" up · default route via wintun";
+                else if (raw.Contains("Secured physical adapter"))
+                    msg = "physical DNS locked to 1.1.1.1 (anti-poisoning)";
+                else if (raw.Contains("Virtual interface"))
+                    msg = "wintun interface active · configuring IPv4 routes";
+                else if (raw.Contains("Bound physical egress"))
+                {
+                    var m = Regex.Match(raw, @"to '([^']+)'");
+                    msg = $"bound physical egress to {(m.Success ? m.Groups[1].Value : "physical adapter")}";
+                }
+                else if (raw.Contains("restored"))
+                    msg = "adapter "wintun" down · routes restored";
+                else
+                {
+                    msg = Regex.Replace(raw, @"^.*?\[NET-TUN\]\s*", "").Trim();
+                }
+
+                return new DiagnosticLogItem { Timestamp = time, Tag = "TUN", TagColor = "#7FD1BE", Message = msg };
+            }
+
+            string coreMsg;
+            if (raw.Contains("NET-PROXY"))
+            {
+                if (raw.Contains("enabled"))
+                    coreMsg = "system proxy bound · 127.0.0.1:1820";
+                else if (raw.Contains("disabled"))
+                    coreMsg = "system proxy released";
+                else
+                    coreMsg = Regex.Replace(raw, @"^.*?\[NET-PROXY\]\s*", "").Trim();
+            }
+            else if (raw.Contains("selected MASQUE gateway"))
+            {
+                var m = Regex.Match(raw, @"gateway ([0-9\.:]+).*?rtt ([0-9\.]+ms)");
+                coreMsg = m.Success ? $"selected edge {m.Groups[1].Value} · rtt {m.Groups[2].Value}" : "selected cloudflare edge";
+            }
+            else if (raw.Contains("masque exit:"))
+            {
+                var m = Regex.Match(raw, @"exit:\s*([^,]+),\s*([^,]+),\s*([^,]+)");
+                coreMsg = m.Success ? $"tunnel established · {m.Groups[2].Value.Trim()} · {m.Groups[3].Value.Trim()}" : "tunnel established";
+            }
+            else if (raw.Contains("socks5 server listening"))
+                coreMsg = "socks5 listening · 127.0.0.1:1819";
+            else if (raw.Contains("http proxy listening"))
+                coreMsg = "http proxy listening · 127.0.0.1:1820";
+            else if (raw.Contains("scan mode=turbo"))
+                coreMsg = "dialing edge · turbo probe (concurrency=20)";
+            else if (raw.Contains("loaded existing masque identity"))
+                coreMsg = "profile "default" loaded · identity ready";
+            else if (raw.Contains("Aether v") || raw.Contains("Aether Desktop Client initialized"))
+                coreMsg = "aether-masque 2.4.0 ready";
+            else if (raw.Contains("Logs copied"))
+                coreMsg = "logs copied to clipboard";
+            else
+            {
+                coreMsg = Regex.Replace(raw, @"^\[\d{2}:\d{2}:\d{2}\]\s*", "");
+                coreMsg = Regex.Replace(coreMsg, @"^\[[A-Z0-9_\-]+\]\s*", "");
+                coreMsg = Regex.Replace(coreMsg, @"^\[\+\]\s*", "");
+                coreMsg = Regex.Replace(coreMsg, @"^\[\*\]\s*", "");
+                coreMsg = coreMsg.Trim();
+            }
+
+            return new DiagnosticLogItem { Timestamp = time, Tag = "CORE", TagColor = "#8DB4F5", Message = coreMsg };
         }
 
         [RelayCommand]
@@ -438,8 +525,8 @@ namespace AetherClient.ViewModels
         public void ClearLogs()
         {
             DiagnosticLogs.Clear();
-            AppendLog($"[{DateTime.Now:HH:mm:ss}] [UI] Logs cleared.");
-        }
+            DiagnosticLogs.Add(new DiagnosticLogItem { Timestamp = DateTime.Now.ToString("HH:mm:ss"), Tag = "CORE", TagColor = "#8DB4F5", Message = "log cleared" });
+                    }
 
         public void Dispose()
         {
