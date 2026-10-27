@@ -128,7 +128,7 @@ namespace AetherClient.ViewModels
             _uptimeTimer.Tick += OnUptimeTimerTick;
 
             DiagnosticLogs.Add(new DiagnosticLogItem { Timestamp = DateTime.Now.ToString("HH:mm:ss"), Tag = "CORE", TagColor = "#8DB4F5", Message = "aether-masque 2.4.0 ready" });
-            DiagnosticLogs.Add(new DiagnosticLogItem { Timestamp = DateTime.Now.ToString("HH:mm:ss"), Tag = "CORE", TagColor = "#8DB4F5", Message = "profile "default" loaded · transport MASQUE over H2" });
+            DiagnosticLogs.Add(new DiagnosticLogItem { Timestamp = DateTime.Now.ToString("HH:mm:ss"), Tag = "CORE", TagColor = "#8DB4F5", Message = "profile 'default' loaded · transport MASQUE over H2" });
             DiagnosticLogs.Add(new DiagnosticLogItem { Timestamp = DateTime.Now.ToString("HH:mm:ss"), Tag = "TUN", TagColor = "#7FD1BE", Message = "wintun driver detected · ready" });
         }
 
@@ -436,7 +436,7 @@ namespace AetherClient.ViewModels
             {
                 string msg;
                 if (raw.Contains("True TUN active"))
-                    msg = "adapter "wintun" up · default route via wintun";
+                    msg = "adapter 'wintun' up · default route via wintun";
                 else if (raw.Contains("Secured physical adapter"))
                     msg = "physical DNS locked to 1.1.1.1 (anti-poisoning)";
                 else if (raw.Contains("Virtual interface"))
@@ -447,7 +447,7 @@ namespace AetherClient.ViewModels
                     msg = $"bound physical egress to {(m.Success ? m.Groups[1].Value : "physical adapter")}";
                 }
                 else if (raw.Contains("restored"))
-                    msg = "adapter "wintun" down · routes restored";
+                    msg = "adapter 'wintun' down · routes restored";
                 else
                 {
                     msg = Regex.Replace(raw, @"^.*?\[NET-TUN\]\s*", "").Trim();
@@ -483,7 +483,7 @@ namespace AetherClient.ViewModels
             else if (raw.Contains("scan mode=turbo"))
                 coreMsg = "dialing edge · turbo probe (concurrency=20)";
             else if (raw.Contains("loaded existing masque identity"))
-                coreMsg = "profile "default" loaded · identity ready";
+                coreMsg = "profile 'default' loaded · identity ready";
             else if (raw.Contains("Aether v") || raw.Contains("Aether Desktop Client initialized"))
                 coreMsg = "aether-masque 2.4.0 ready";
             else if (raw.Contains("Logs copied"))
