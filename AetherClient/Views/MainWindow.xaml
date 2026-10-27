@@ -441,7 +441,7 @@
                                         BorderBrush="{StaticResource MeniscusEdgeBrush}"
                                         BorderThickness="1">
                                     <Border.Effect>
-                                        <DropShadowEffect x:Name="PlateShadow"
+                                        <DropShadowEffect
                                                           Color="#000000"
                                                           BlurRadius="16"
                                                           ShadowDepth="4"
@@ -491,9 +491,11 @@
                                     <DataTrigger Binding="{Binding CurrentState}" Value="{x:Static models:ConnectionState.Connected}">
                                         <Setter TargetName="PlateOuter" Property="Background" Value="{StaticResource EmeraldPlateBgBrush}" />
                                         <Setter TargetName="PlateOuter" Property="BorderBrush" Value="{StaticResource EmeraldMeniscusBrush}" />
-                                        <Setter TargetName="PlateShadow" Property="Color" Value="#00E676" />
-                                        <Setter TargetName="PlateShadow" Property="BlurRadius" Value="28" />
-                                        <Setter TargetName="PlateShadow" Property="Opacity" Value="0.45" />
+                                        <Setter TargetName="PlateOuter" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#00E676" BlurRadius="28" ShadowDepth="4" Opacity="0.45" />
+                                            </Setter.Value>
+                                        </Setter>
 
                                         <Setter TargetName="PlateInner" Property="Background" Value="#F0020605" />
                                         <Setter TargetName="PlateInner" Property="BorderBrush" Value="#4000E676" />
