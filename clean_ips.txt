@@ -6,14 +6,37 @@
 # reject MASQUE connect-ip encapsulation with HTTP 400 Bad Request.
 # ==============================================================================
 
-162.159.192.1:443|Stockholm Edge|SE
-162.159.192.10:443|Stockholm North|SE
-162.159.193.1:443|London Docklands|UK
-162.159.193.5:443|London Prime|UK
-162.159.198.4:443|Frankfurt Alpha|DE
-162.159.198.65:443|Frankfurt Bravo|DE
-162.159.198.72:443|Frankfurt Core|DE
-162.159.198.198:443|Amsterdam Direct|NL
-162.159.198.245:443|Amsterdam Edge|NL
+# Primary IPv6 Anycast (MCI / Iran Mobile DPI Whitelist Bypass)
+[2606:4700:d0::a29f:c001]:443|Cloudflare Anycast MCI IPv6|GLOBAL
+
+# Low-Latency Hunted WARP Anycast IPv4 Gateways (Top 30 Sorted by RTT)
+162.159.199.125:443|Frankfurt Elite|DE
+162.159.198.213:443|Amsterdam Core|NL
+162.159.198.75:443|Stockholm Prime|SE
+162.159.199.196:443|Helsinki Direct|FI
+162.159.198.74:443|Stockholm Edge|SE
+162.159.198.233:443|Frankfurt Alpha|DE
+162.159.198.37:443|Warsaw Direct|PL
+162.159.198.250:443|Vienna Edge|AT
+162.159.199.34:443|Zurich Core|CH
+162.159.198.244:443|Frankfurt Bravo|DE
+162.159.199.182:443|London Prime|UK
+162.159.199.138:443|Amsterdam Direct|NL
+162.159.198.172:443|Prague Direct|CZ
+162.159.199.246:443|Frankfurt Core|DE
+162.159.198.125:443|Berlin Edge|DE
+162.159.198.64:443|Stockholm Alpha|SE
+162.159.199.157:443|London Docklands|UK
+162.159.199.88:443|Brussels Edge|BE
+162.159.198.169:443|Warsaw Gateway|PL
+162.159.199.147:443|Milan Edge|IT
+162.159.198.186:443|Paris Core|FR
+162.159.198.86:443|Oslo Gateway|NO
+162.159.198.77:443|Madrid Core|ES
+162.159.198.206:443|Dublin Edge|IE
+162.159.198.4:443|Frankfurt Edge|DE
+162.159.198.65:443|Frankfurt Relay|DE
+162.159.198.198:443|Amsterdam Relay|NL
+162.159.198.245:443|Amsterdam Gateway|NL
 162.159.199.60:443|Helsinki Gateway|FI
-162.159.199.133:443|Warsaw Gateway|PL
+162.159.199.133:443|Warsaw Edge|PL

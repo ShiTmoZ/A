@@ -95,13 +95,14 @@ jobs:
             Zero-bloat, production-grade desktop client for Cloudflare MASQUE (RFC 9298) HTTP/2 censorship bypass on DPI-restricted networks (TCI / MCI / Irancell).
 
             #### Features:
-            - **Compact Nostalgic Cyber UI**: Clean, lightweight 460px desktop window with high-contrast cyber dark styling, glowing power orb, and zero bloat.
-            - **Strict Backend Execution Discipline**: Locked `aether.exe v2.4.0` invocation to verified stable parameters (`--masque --h2 -4 --turbo --quick-reconnect --http-proxy 127.0.0.1:1820`).
-            - **Live Edge Telemetry HUD**: Real-time Anycast edge discovery, live IATA Exit POP detection, and multi-tier RTT latency grading.
-            - **Dual Routing Modes**: Seamless toggle between True TUN (Wintun L3 kernel adapter with default route & DNS lock) and System Proxy (WinINET loopback on 127.0.0.1:1820).
+            - **Compact Cyber HUD & Liquid Glass UI**: Clean, lightweight 460px desktop window with high-contrast cyber dark styling, glowing power orb, and zero bloat.
+            - **Real-Time Edge Radar**: Probes verified low-latency WARP Anycast gateways in parallel (<1.5s) and directly locks the optimal peer (`--peer <fastest>`) with zero hunt delay.
+            - **Dual-Stack & MCI IPv6 Bypass**: Removed IPv4-only limitation (`-4`), enabling native Cloudflare Anycast IPv6 (`[2606:4700:d0::a29f:c001]:443`) to bypass Iran Mobile (MCI) IPv4 upload packet throttling.
+            - **Updated 30-Node Anycast Ingress Bank**: Pre-loaded with top low-latency hunted European endpoints (Frankfurt, Amsterdam, Stockholm, Helsinki, London, Warsaw).
+            - **Dual Routing Modes**: Seamless toggle between True TUN (Wintun L3 kernel adapter with `/1` and `/0` routing & DNS lock) and System Proxy (WinINET loopback on 127.0.0.1:1820).
             - **Zero-Orphan Architecture**: Process trees bound to Windows Kernel Job Object (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) ensuring 100% orphan-free termination.
-            - **DNS Guard & Self-Healing**: Automated `netsh` DNS lock to 1.1.1.1 preventing 10.10.34.34 injection, with automatic DHCP restoration on severance.
-            - **Collapsible Monospace Terminal**: Diagnostic telemetry with 1-click clipboard copy and clear.
+            - **DNS Guard & Self-Healing**: Automated DNS lock with resolver cache flush preventing 10.10.34.34 injection, with automatic DHCP restoration on severance.
+            - **Collapsible Monospace Terminal**: Diagnostic telemetry with live `[RADAR]` status, 1-click clipboard copy, and clear.
           files: .\AetherClient-Windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

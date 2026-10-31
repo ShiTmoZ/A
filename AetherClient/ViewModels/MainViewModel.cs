@@ -284,9 +284,24 @@ namespace AetherClient.ViewModels
         {
             Application.Current?.Dispatcher.InvokeAsync(() =>
             {
-                string ipOnly = endpoint.Split(':')[0];
-                PeerIpValue = ipOnly;
-                PeerIpSub = "IPv4 · UDP/443";
+                string ipDisplay = endpoint;
+                bool isIpv6 = endpoint.Contains(':') && (endpoint.StartsWith('[') || endpoint.Count(c => c == ':') > 1);
+
+                if (endpoint.StartsWith('['))
+                {
+                    int close = endpoint.IndexOf(']');
+                    if (close > 0)
+                        ipDisplay = endpoint.Substring(1, close - 1);
+                }
+                else
+                {
+                    int colon = endpoint.IndexOf(':');
+                    if (colon > 0)
+                        ipDisplay = endpoint[..colon];
+                }
+
+                PeerIpValue = ipDisplay;
+                PeerIpSub = isIpv6 ? "IPv6 · MASQUE H2" : "IPv4 · MASQUE H2";
             });
         }
 
@@ -297,7 +312,7 @@ namespace AetherClient.ViewModels
                 if (PeerIpValue == "—" && !string.IsNullOrWhiteSpace(telemetry.IpAddress))
                 {
                     PeerIpValue = telemetry.IpAddress;
-                    PeerIpSub = "IPv4 · UDP/443";
+                    PeerIpSub = telemetry.IpAddress.Contains(':') ? "IPv6 · MASQUE H2" : "IPv4 · MASQUE H2";
                 }
 
                 // Format Exit PoP
@@ -401,6 +416,12 @@ namespace AetherClient.ViewModels
                 string msg = Regex.Replace(raw, @"^\[\d{2}:\d{2}:\d{2}\]\s*", "");
                 msg = Regex.Replace(msg, @"^\[[A-Z0-9_\-]+\]\s*", "");
                 return new DiagnosticLogItem { Timestamp = time, Tag = "ERR", TagColor = "#FF6B6B", Message = msg.Trim() };
+            }
+
+            if (raw.Contains("[RADAR]"))
+            {
+                string msg = Regex.Replace(raw, @"^.*?\[RADAR\]\s*", "").Trim();
+                return new DiagnosticLogItem { Timestamp = time, Tag = "RADAR", TagColor = "#00E676", Message = msg };
             }
 
             if (raw.Contains("masque_h2") || raw.Contains("connect-ip") || raw.Contains("[masque]") ||

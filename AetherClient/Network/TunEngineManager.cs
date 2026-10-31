@@ -52,6 +52,8 @@ namespace AetherClient.Network
                 finally { proc.Dispose(); }
             }
 
+            RunSilentCommand("route", $"delete 0.0.0.0 mask 128.0.0.0 {TunGateway}");
+            RunSilentCommand("route", $"delete 128.0.0.0 mask 128.0.0.0 {TunGateway}");
             RunSilentCommand("route", $"delete 0.0.0.0 mask 0.0.0.0 {TunGateway}");
         }
 
@@ -122,7 +124,9 @@ namespace AetherClient.Network
                 }
             }
 
-            // 6. Set system default route through TUN
+            // 6. Set system default route through TUN (0.0.0.0/1, 128.0.0.0/1, and 0.0.0.0/0 for absolute route precedence)
+            await RunCommandAsync("route", $"add 0.0.0.0 mask 128.0.0.0 {TunGateway} metric 1 if {tunIfIndex}", cancellationToken).ConfigureAwait(false);
+            await RunCommandAsync("route", $"add 128.0.0.0 mask 128.0.0.0 {TunGateway} metric 1 if {tunIfIndex}", cancellationToken).ConfigureAwait(false);
             await RunCommandAsync("route", $"add 0.0.0.0 mask 0.0.0.0 {TunGateway} metric 1 if {tunIfIndex}", cancellationToken).ConfigureAwait(false);
 
             NativeMethods.DnsFlushResolverCache();
@@ -135,11 +139,20 @@ namespace AetherClient.Network
                 return;
 
             string cleanIp = rawEndpoint;
-            int colonIndex = rawEndpoint.IndexOf(':');
-            if (colonIndex > 0)
-                cleanIp = rawEndpoint[..colonIndex];
+            if (cleanIp.StartsWith('['))
+            {
+                int closeBracket = cleanIp.IndexOf(']');
+                if (closeBracket > 0)
+                    cleanIp = cleanIp.Substring(1, closeBracket - 1);
+            }
+            else
+            {
+                int colonIndex = cleanIp.IndexOf(':');
+                if (colonIndex > 0)
+                    cleanIp = cleanIp[..colonIndex];
+            }
 
-            if (!System.Net.IPAddress.TryParse(cleanIp, out _))
+            if (!System.Net.IPAddress.TryParse(cleanIp, out var ip) || ip.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
                 return;
 
             lock (_installedBypassHosts)
@@ -157,6 +170,8 @@ namespace AetherClient.Network
             try
             {
                 // Remove default route via TUN gateway
+                RunSilentCommand("route", $"delete 0.0.0.0 mask 128.0.0.0 {TunGateway}");
+                RunSilentCommand("route", $"delete 128.0.0.0 mask 128.0.0.0 {TunGateway}");
                 RunSilentCommand("route", $"delete 0.0.0.0 mask 0.0.0.0 {TunGateway}");
 
                 // Remove bypass subnet routes
