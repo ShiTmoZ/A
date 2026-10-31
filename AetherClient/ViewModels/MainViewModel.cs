@@ -285,7 +285,7 @@ namespace AetherClient.ViewModels
             Application.Current?.Dispatcher.InvokeAsync(() =>
             {
                 string ipDisplay = endpoint;
-                bool isIpv6 = endpoint.Contains(':') && (endpoint.StartsWith('[') || endpoint.Count(c => c == ':') > 1);
+                bool isIpv6 = endpoint.StartsWith('[') || (endpoint.Contains(':') && endpoint.IndexOf(':') != endpoint.LastIndexOf(':'));
 
                 if (endpoint.StartsWith('['))
                 {
