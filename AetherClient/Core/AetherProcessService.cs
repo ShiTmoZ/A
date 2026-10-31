@@ -27,26 +27,6 @@ namespace AetherClient.Core
         [GeneratedRegex(@"(?:\[[0-9a-fA-F:]+\]|\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d{2,5}", RegexOptions.Compiled)]
         private static partial Regex EndpointRegex();
 
-        private static readonly string[] DefaultCleanEdges =
-        [
-            "[2606:4700:d0::a29f:c001]:443",
-            "162.159.199.125:443",
-            "162.159.198.213:443",
-            "162.159.198.75:443",
-            "162.159.199.196:443",
-            "162.159.198.74:443",
-            "162.159.198.233:443",
-            "162.159.198.37:443",
-            "162.159.198.250:443",
-            "162.159.199.34:443",
-            "162.159.198.244:443",
-            "162.159.198.125:443",
-            "162.159.198.245:443",
-            "162.159.198.198:443",
-            "162.159.198.4:443",
-            "162.159.198.65:443"
-        ];
-
         private readonly JobObjectManager _jobManager;
         private readonly SemaphoreSlim _lifecycleLock = new(1, 1);
         private Process? _process;
@@ -113,20 +93,9 @@ namespace AetherClient.Core
                     }
                 }
 
-                string? fastestPeer = await FindFastestPeerAsync(cancellationToken).ConfigureAwait(false);
-
-                string arguments;
-                if (!string.IsNullOrWhiteSpace(fastestPeer))
-                {
-                    ActivePeer = fastestPeer;
-                    arguments = $"--masque --h2 --peer {fastestPeer} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
-                }
-                else
-                {
-                    string scanFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
-                    arguments = $"--masque --h2 --turbo {scanFlag} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
-                    ActivePeer = "Auto (Turbo)";
-                }
+                string scanFlag = forceFreshScan ? "--no-quick-reconnect" : "--quick-reconnect";
+                string arguments = $"--masque --h2 --dual --perf high --scan verified {scanFlag} --http-proxy {LocalProxyHost}:{LocalHttpProxyPort}";
+                ActivePeer = forceFreshScan ? "Dynamic Hunt (Verified Mesh)" : "Auto (Dynamic Mesh)";
 
                 EmitLog($"[EXEC] {ExecutableName} {arguments}");
 
@@ -175,8 +144,8 @@ namespace AetherClient.Core
                 _ = ConsumeStreamAsync(_process.StandardOutput, _cts.Token);
                 _ = ConsumeStreamAsync(_process.StandardError, _cts.Token);
 
-                // Wait for core to expose SOCKS5 or HTTP proxy listener (up to 25s)
-                using var timeoutCts = new CancellationTokenSource(25000);
+                // Wait for core to expose SOCKS5 or HTTP proxy listener (up to 35s for thorough multi-edge hunt)
+                using var timeoutCts = new CancellationTokenSource(35000);
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
                 try
@@ -376,107 +345,6 @@ namespace AetherClient.Core
                 TunnelStateChanged?.Invoke(false);
                 ProcessExitedUnexpectedly?.Invoke(exitCode);
             }
-        }
-
-                private async Task<string?> FindFastestPeerAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                var candidates = LoadCleanEdges();
-                if (candidates.Count == 0)
-                    return null;
-
-                EmitLog($"[RADAR] Probing {candidates.Count} verified WARP Anycast gateways (IPv6/IPv4)...");
-
-                using var probeCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                probeCts.CancelAfter(TimeSpan.FromMilliseconds(1500));
-
-                var tasks = candidates.Select(async endpoint =>
-                {
-                    try
-                    {
-                        string host = endpoint;
-                        int port = 443;
-
-                        if (endpoint.StartsWith('['))
-                        {
-                            int closeBracket = endpoint.IndexOf(']');
-                            if (closeBracket > 0)
-                            {
-                                host = endpoint.Substring(1, closeBracket - 1);
-                                if (endpoint.Length > closeBracket + 2 && endpoint[closeBracket + 1] == ':')
-                                {
-                                    int.TryParse(endpoint[(closeBracket + 2)..], out port);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            int colonIndex = endpoint.IndexOf(':');
-                            if (colonIndex > 0)
-                            {
-                                host = endpoint[..colonIndex];
-                                int.TryParse(endpoint[(colonIndex + 1)..], out port);
-                            }
-                        }
-
-                        var sw = Stopwatch.StartNew();
-                        using var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-                        await socket.ConnectAsync(host, port, probeCts.Token).ConfigureAwait(false);
-                        sw.Stop();
-                        return (Endpoint: endpoint, LatencyMs: sw.ElapsedMilliseconds, Success: true);
-                    }
-                    catch
-                    {
-                        return (Endpoint: endpoint, LatencyMs: long.MaxValue, Success: false);
-                    }
-                }).ToList();
-
-                var results = await Task.WhenAll(tasks).ConfigureAwait(false);
-                var responsive = results
-                    .Where(r => r.Success)
-                    .OrderBy(r => r.LatencyMs)
-                    .ToList();
-
-                if (responsive.Count > 0)
-                {
-                    var best = responsive[0];
-                    EmitLog($"[RADAR] Selected {best.Endpoint} (RTT: {best.LatencyMs}ms)");
-                    return best.Endpoint;
-                }
-            }
-            catch (Exception ex)
-            {
-                EmitLog($"[RADAR-WARN] Gateway probe notice: {ex.Message}");
-            }
-
-            return null;
-        }
-
-        private static List<string> LoadCleanEdges()
-        {
-            var list = new List<string>();
-            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "clean_ips.txt");
-            if (File.Exists(path))
-            {
-                foreach (var line in File.ReadAllLines(path))
-                {
-                    string trimmed = line.Trim();
-                    if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith('#') || trimmed.StartsWith("//"))
-                        continue;
-
-                    string endpoint = trimmed.Split('|')[0].Trim();
-                    if (!string.IsNullOrWhiteSpace(endpoint))
-                        list.Add(endpoint);
-                }
-            }
-
-            if (list.Count == 0)
-            {
-                list.AddRange(DefaultCleanEdges);
-            }
-
-            return list;
         }
 
         private static string ResolveBinaryPath()

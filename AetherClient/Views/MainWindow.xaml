@@ -650,8 +650,15 @@
                                     </StackPanel>
                                 </ToggleButton>
 
-                                <!-- Right: Copy & Clear Buttons -->
+                                <!-- Right: Re-Hunt, Copy & Clear Buttons -->
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource PillButtonStyle}"
+                                            Command="{Binding HuntNextEdgeCommand}"
+                                            ToolTip="Force dynamic multi-gateway fresh scan"
+                                            Margin="0,0,6,0">
+                                        <TextBlock Text="Re-Hunt" Foreground="#F2B84B" />
+                                    </Button>
+
                                     <Button Style="{StaticResource PillButtonStyle}"
                                             Command="{Binding CopyLogsCommand}"
                                             Margin="0,0,6,0">

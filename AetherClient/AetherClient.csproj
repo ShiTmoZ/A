@@ -17,6 +17,9 @@
     <StartupObject>AetherClient.App</StartupObject>
     <AssemblyName>AetherClient</AssemblyName>
     <RootNamespace>AetherClient</RootNamespace>
+    <Version>1.0.38</Version>
+    <AssemblyVersion>1.0.38.0</AssemblyVersion>
+    <FileVersion>1.0.38.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

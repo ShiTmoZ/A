@@ -206,7 +206,9 @@ namespace AetherClient.ViewModels
                 UpdateStatusDetail();
 
                 AppendLog($"[{DateTime.Now:HH:mm:ss}] [CORE] Launching Cloudflare MASQUE H2 engine...");
-                bool started = await _processService.StartAsync(IsFreshScan, _tunnelCts.Token).ConfigureAwait(false);
+                bool freshScan = IsFreshScan;
+                IsFreshScan = false;
+                bool started = await _processService.StartAsync(freshScan, _tunnelCts.Token).ConfigureAwait(false);
 
                 if (!started)
                 {
@@ -219,6 +221,7 @@ namespace AetherClient.ViewModels
                 {
                     AppendLog($"[{DateTime.Now:HH:mm:ss}] [PROXY] Enabling WinINET system proxy on 127.0.0.1:1820...");
                     _proxyManager.EnableProxy();
+                    AppendLog($"[{DateTime.Now:HH:mm:ss}] [PROXY-HINT] System Proxy routes TCP. For YouTube/QUIC or full UDP, switch to True TUN or disable QUIC in browser.");
                 }
                 else
                 {
@@ -535,6 +538,24 @@ namespace AetherClient.ViewModels
             }
 
             return new DiagnosticLogItem { Timestamp = time, Tag = "CORE", TagColor = "#8DB4F5", Message = coreMsg };
+        }
+
+        [RelayCommand]
+        public async Task HuntNextEdgeAsync()
+        {
+            if (CurrentState == ConnectionState.Hunting)
+                return;
+
+            AppendLog($"[{DateTime.Now:HH:mm:ss}] [UI] Re-Hunt requested: forcing dynamic fresh multi-gateway scan...");
+
+            if (CurrentState == ConnectionState.Connected)
+            {
+                await DisconnectAsync().ConfigureAwait(false);
+                await Task.Delay(300).ConfigureAwait(false);
+            }
+
+            IsFreshScan = true;
+            await ConnectAsync().ConfigureAwait(false);
         }
 
         [RelayCommand]
